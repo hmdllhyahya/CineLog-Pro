@@ -1,0 +1,51 @@
+name: Auto publish source release
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release metadata
+        id: meta
+        shell: bash
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY##*/}"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          TS="$(date -u +'%Y.%m.%d-%H%M%S')"
+          TAG="release-${TS}-${SHORT_SHA}"
+          TITLE="Auto Release ${TS} (${SHORT_SHA})"
+
+          echo "repo_name=$REPO_NAME" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+
+      - name: Create source archives
+        shell: bash
+        run: |
+          mkdir -p dist
+          PREFIX="${{ steps.meta.outputs.repo_name }}-${{ steps.meta.outputs.tag }}/"
+          git archive --format=zip --prefix="$PREFIX" -o "dist/${{ steps.meta.outputs.repo_name }}-${{ steps.meta.outputs.tag }}.zip" HEAD
+          git archive --format=tar.gz --prefix="$PREFIX" -o "dist/${{ steps.meta.outputs.repo_name }}-${{ steps.meta.outputs.tag }}.tar.gz" HEAD
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.title }}
+          generate_release_notes: true
+          files: |
+            dist/*.zip
+            dist/*.tar.gz
