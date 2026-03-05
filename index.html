@@ -4,577 +4,591 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CineLog Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="https://js.puter.com/v2/"></script>
 <style>
-:root{--bg:#07070a;--el:#111114;--text:#f0f0f5;--muted:#8a8a96;--accent:#3d8ef8;--star:#ffad0a;--border:rgba(255,255,255,.1);--serif:'Playfair Display',serif;--sans:'DM Sans',sans-serif}
+:root{--bg:#07070a;--el:#111114;--text:#f0f0f5;--mu:#8a8a96;--ac:#3d8ef8;--star:#ffad0a;--bd:rgba(255,255,255,.1);--sr:'Playfair Display',serif;--ss:'DM Sans',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased;cursor:none;user-select:none}
-/* allow selection on content areas */
-p.selectable,h1.selectable,#md-synopsis,#md-title,#rev-text,.diary-card p,.quote-block p{user-select:text}
+body{font-family:var(--ss);background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased;cursor:none;user-select:none}
+p.sel,h1.sel,#md-synopsis,#md-title,#rv-text,.qb p,.cmb,textarea,input{user-select:text;cursor:text}
 a,button{border:none;background:none;color:inherit;cursor:none;text-decoration:none;font-family:inherit}
-#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
-/* CURSOR */
-#cur-ring{position:fixed;top:0;left:0;width:36px;height:36px;border:2px solid rgba(255,255,255,.6);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s,border-color .2s,background .2s;mix-blend-mode:difference}
-#cur-dot{position:fixed;top:0;left:0;width:6px;height:6px;background:#fff;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%)}
-.clh #cur-ring{width:54px;height:54px;background:rgba(61,142,248,.15);border-color:var(--accent)}
-/* TOP NAV */
-#top-nav{position:fixed;top:0;left:0;width:100%;z-index:500;display:flex;align-items:center;padding:16px 28px;transition:all .5s cubic-bezier(.16,1,.3,1)}
-#top-nav::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,7,10,.92) 0%,transparent 100%);opacity:0;transition:opacity .4s;pointer-events:none}
-#top-nav.scrolled::before{opacity:1}
-.nav-logo{font-family:var(--serif);font-size:21px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--text);white-space:nowrap;z-index:2;text-shadow:0 2px 8px rgba(0,0,0,.8)}
-.nav-logo i{color:var(--accent)}
-/* Back button */
-#back-btn{display:none;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.1);backdrop-filter:blur(20px);border:1px solid var(--border);font-size:13px;font-weight:500;margin-left:16px;color:var(--muted);transition:color .2s,background .2s;white-space:nowrap;text-shadow:none}
-#back-btn:hover{color:var(--text);background:rgba(255,255,255,.18)}
-#back-btn.visible{display:flex}
-.nav-links{display:flex;align-items:center;gap:2px;margin-left:auto;transition:opacity .45s cubic-bezier(.16,1,.3,1),transform .45s cubic-bezier(.16,1,.3,1);transform-origin:right center}
-.nav-links a{font-size:14px;font-weight:500;padding:8px 15px;border-radius:30px;color:rgba(255,255,255,.7);transition:color .2s,background .2s;white-space:nowrap;display:flex;align-items:center;gap:5px;text-shadow:0 1px 6px rgba(0,0,0,.9)}
-.nav-links a:hover,.nav-links a.active-nav{color:#fff;background:rgba(255,255,255,.1)}
-.nav-links a.active-nav{color:var(--accent)}
-#top-nav.scrolled .nav-links{opacity:0;transform:translateX(50px) scale(.85);pointer-events:none}
-.nav-fab{position:fixed;top:14px;right:22px;z-index:600;width:48px;height:48px;border-radius:24px;background:rgba(255,255,255,.12);backdrop-filter:blur(20px);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;opacity:0;transform:translateX(20px) scale(.8);transition:opacity .45s cubic-bezier(.16,1,.3,1),transform .45s cubic-bezier(.16,1,.3,1);pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.4)}
-body.nav-sc .nav-fab{opacity:1;transform:translateX(0) scale(1);pointer-events:all}
-.fab-dd{position:fixed;top:72px;right:22px;z-index:600;background:rgba(16,16,20,.94);backdrop-filter:blur(30px);border:1px solid var(--border);border-radius:20px;padding:8px;display:flex;flex-direction:column;gap:2px;min-width:200px;opacity:0;visibility:hidden;transform:translateY(-10px) scale(.95);transform-origin:top right;transition:all .35s cubic-bezier(.16,1,.3,1);box-shadow:0 20px 60px rgba(0,0,0,.6)}
-.fab-dd.open{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
-.fab-dd a{display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:14px;font-size:15px;font-weight:500;color:var(--muted);transition:color .2s,background .2s}
-.fab-dd a:hover,.fab-dd a.active-nav{color:var(--text);background:rgba(255,255,255,.07)}
-.fab-dd a.active-nav{color:var(--accent)}
-/* VIEWS */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ── CURSOR ── */
+#cring{position:fixed;top:0;left:0;width:34px;height:34px;border:2px solid rgba(255,255,255,.55);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .18s,height .18s,border-color .18s,background .18s;mix-blend-mode:difference}
+#cdot{position:fixed;top:0;left:0;width:6px;height:6px;background:#fff;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%)}
+.clh #cring{width:52px;height:52px;background:rgba(61,142,248,.14);border-color:var(--ac)}
+
+/* ── NAV ── */
+#tnav{position:fixed;top:0;left:0;width:100%;z-index:500;display:flex;align-items:center;gap:0;padding:14px 28px;transition:all .5s cubic-bezier(.16,1,.3,1)}
+#tnav::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,7,10,.94) 0%,transparent 100%);opacity:0;transition:opacity .4s;pointer-events:none}
+#tnav.scrolled::before{opacity:1}
+.nlogo{font-family:var(--sr);font-size:20px;font-weight:700;display:flex;align-items:center;gap:7px;color:var(--text);white-space:nowrap;z-index:2;text-shadow:0 2px 12px rgba(0,0,0,.9);flex-shrink:0}
+.nlogo i{color:var(--ac)}
+/* Back btn — small pill */
+#backbtn{display:none;align-items:center;gap:4px;margin-left:10px;padding:4px 12px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-size:12px;font-weight:500;color:rgba(255,255,255,.55);transition:all .2s;white-space:nowrap;flex-shrink:0}
+#backbtn:hover{color:var(--text);background:rgba(255,255,255,.14)}
+#backbtn.vis{display:flex}
+/* nav links */
+.nlinks{display:flex;align-items:center;gap:2px;margin-left:auto;transition:opacity .45s cubic-bezier(.16,1,.3,1),transform .45s cubic-bezier(.16,1,.3,1);transform-origin:right center}
+.nlinks a{font-size:13px;font-weight:500;padding:7px 13px;border-radius:24px;transition:color .2s,background .2s;white-space:nowrap;display:flex;align-items:center;gap:4px;text-shadow:0 1px 8px rgba(0,0,0,.95),0 2px 16px rgba(0,0,0,.7)}
+/* dynamic text color detection */
+.nlinks a{color:rgba(255,255,255,.72)}
+.nlinks a:hover,.nlinks a.an{color:#fff;background:rgba(255,255,255,.1)}
+.nlinks a.an{color:var(--ac)}
+#tnav.scrolled .nlinks{opacity:0;transform:translateX(46px) scale(.87);pointer-events:none}
+/* Log+ quick button */
+.logq{margin-left:10px;padding:7px 16px;border-radius:22px;background:var(--ac);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;gap:5px;transition:transform .2s,box-shadow .2s;white-space:nowrap;flex-shrink:0;text-shadow:none}
+.logq:hover{transform:scale(1.06);box-shadow:0 6px 22px rgba(61,142,248,.45)}
+#tnav.scrolled .logq{opacity:0;pointer-events:none}
+/* FAB */
+.nfab{position:fixed;top:13px;right:22px;z-index:600;width:46px;height:46px;border-radius:23px;background:rgba(255,255,255,.1);backdrop-filter:blur(20px);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:19px;opacity:0;transform:translateX(16px) scale(.82);transition:opacity .4s cubic-bezier(.16,1,.3,1),transform .4s cubic-bezier(.16,1,.3,1);pointer-events:none;box-shadow:0 6px 28px rgba(0,0,0,.4)}
+body.nsc .nfab{opacity:1;transform:translateX(0) scale(1);pointer-events:all}
+.fabdd{position:fixed;top:68px;right:22px;z-index:600;background:rgba(14,14,18,.95);backdrop-filter:blur(28px);border:1px solid var(--bd);border-radius:18px;padding:7px;display:flex;flex-direction:column;gap:2px;min-width:190px;opacity:0;visibility:hidden;transform:translateY(-8px) scale(.96);transform-origin:top right;transition:all .32s cubic-bezier(.16,1,.3,1);box-shadow:0 18px 55px rgba(0,0,0,.65)}
+.fabdd.open{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
+.fabdd a{display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:12px;font-size:14px;font-weight:500;color:var(--mu);transition:color .2s,background .2s}
+.fabdd a:hover,.fabdd a.an{color:var(--text);background:rgba(255,255,255,.07)}
+.fabdd a.an{color:var(--ac)}
+
+/* ── VIEWS ── */
 .view{display:none;min-height:100vh;position:relative;z-index:1;padding-bottom:60px}
 .view.active{display:block;animation:vu .5s cubic-bezier(.16,1,.3,1) forwards}
-@keyframes vu{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-.ph{padding:110px 40px 50px;max-width:1200px;margin:0 auto;border-bottom:1px solid var(--border)}
-.pc{max-width:1200px;margin:0 auto;padding:50px 40px}
-@media(max-width:768px){.ph{padding:90px 20px 40px}.pc{padding:40px 20px}}
-/* TYPOGRAPHY */
-.th{font-family:var(--serif);font-size:clamp(40px,7vw,72px);font-weight:700;line-height:1.05;letter-spacing:-.02em;text-shadow:0 4px 20px rgba(0,0,0,.8)}
-.tp{font-family:var(--serif);font-size:clamp(30px,5vw,46px);font-weight:700;letter-spacing:-.02em}
-.ts{font-family:var(--serif);font-size:clamp(22px,3vw,30px);font-weight:600;letter-spacing:-.01em;margin-bottom:20px}
-.tb{font-size:16px;line-height:1.65;color:var(--muted)}
+@keyframes vu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.ph{padding:108px 40px 44px;max-width:1200px;margin:0 auto;border-bottom:1px solid var(--bd)}
+.pc{max-width:1200px;margin:0 auto;padding:48px 40px}
+@media(max-width:768px){.ph{padding:88px 20px 36px}.pc{padding:36px 20px}}
+
+/* ── TYPE ── */
+.th{font-family:var(--sr);font-size:clamp(36px,6.5vw,68px);font-weight:700;line-height:1.05;letter-spacing:-.02em;text-shadow:0 4px 20px rgba(0,0,0,.8)}
+.tp{font-family:var(--sr);font-size:clamp(28px,4.5vw,44px);font-weight:700;letter-spacing:-.02em}
+.ts{font-family:var(--sr);font-size:clamp(20px,3vw,28px);font-weight:600;letter-spacing:-.01em;margin-bottom:18px}
+.tb{font-size:16px;line-height:1.65;color:var(--mu)}
 .gt{background:linear-gradient(135deg,#ff7a18,#af002d 50%,#319197);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-/* BUTTONS */
-.btn{padding:12px 26px;border-radius:30px;font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:8px;transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s}
-.btn-p{background:var(--text);color:#000}.btn-p:hover{transform:scale(1.04);box-shadow:0 8px 30px rgba(255,255,255,.15)}
-.btn-g{background:rgba(255,255,255,.1);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.18)}.btn-g:hover{background:rgba(255,255,255,.18);transform:scale(1.04)}
-.btn-a{background:var(--accent);color:#fff}.btn-a:hover{transform:scale(1.04);box-shadow:0 8px 30px rgba(61,142,248,.3)}
-.btn-sm{padding:8px 16px;font-size:13px}
-/* HERO */
-.hero-wrap{position:relative;height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 40px 200px;overflow:hidden}
-@media(max-width:768px){.hero-wrap{padding:0 20px 220px}}
-#yt-wrap{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-#yt-wrap iframe{position:absolute;top:50%;left:50%;width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw;transform:translate(-50%,-50%);pointer-events:none}
-.hero-ov{position:absolute;inset:0;z-index:1;background:linear-gradient(0deg,rgba(7,7,10,1) 0%,rgba(7,7,10,.5) 50%,rgba(7,7,10,.2) 100%)}
-.hero-fade{position:absolute;inset:0;z-index:2;background:var(--bg);opacity:0;transition:opacity .5s;pointer-events:none}
-.hero-cnt{position:relative;z-index:3;max-width:900px}
-.hero-cnt-tr{transition:opacity .4s,transform .4s}
-/* Hero video controls - fixed position, high z-index */
-.hero-vctl{position:absolute;bottom:180px;right:40px;z-index:10;display:flex;gap:8px}
-@media(max-width:768px){.hero-vctl{right:20px;bottom:195px}}
-.vctl-btn{width:42px;height:42px;border-radius:21px;background:rgba(255,255,255,.14);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:16px;transition:background .2s,transform .2s}
-.vctl-btn:hover{background:rgba(255,255,255,.25);transform:scale(1.1)}
-/* VIDEO TABS per film */
-.vid-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;margin-top:8px}
-.vid-tab{padding:5px 14px;border-radius:12px;font-size:12px;font-weight:600;border:1px solid var(--border);color:var(--muted);transition:all .2s;background:rgba(255,255,255,.04)}
-.vid-tab:hover,.vid-tab.active{background:rgba(255,255,255,.12);color:var(--text)}
-/* CAROUSEL */
-.car-sec{position:relative;z-index:5;padding-bottom:20px}
-.car-lbl{padding-left:40px;margin-bottom:10px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;text-shadow:0 2px 8px rgba(0,0,0,.8)}
-@media(max-width:768px){.car-lbl{padding-left:20px}}
-.scroll-row{display:flex;gap:16px;overflow-x:auto;padding:0 40px 20px;scroll-snap-type:x mandatory;scrollbar-width:none}
-.scroll-row::-webkit-scrollbar{display:none}
-@media(max-width:768px){.scroll-row{padding:0 20px 20px}}
-.pcard{flex:0 0 150px;aspect-ratio:2/3;border-radius:14px;background-size:cover;background-position:center;border:2px solid transparent;cursor:none;transition:transform .4s cubic-bezier(.16,1,.3,1),border-color .3s,box-shadow .4s;scroll-snap-align:start;box-shadow:0 8px 24px rgba(0,0,0,.5)}
-@media(min-width:768px){.pcard{flex:0 0 180px}}
-.pcard:hover{transform:scale(1.06) translateY(-8px);border-color:rgba(255,255,255,.8);box-shadow:0 20px 40px rgba(0,0,0,.6)}
-.pcard.ap{border-color:var(--accent);box-shadow:0 0 0 4px rgba(61,142,248,.2),0 20px 40px rgba(0,0,0,.6)}
-/* BENTO */
-.bento-sec{max-width:1200px;margin:0 auto;padding:60px 40px;text-align:center}
-@media(max-width:768px){.bento-sec{padding:40px 20px}}
-.bento-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:36px;text-align:left}
-@media(max-width:768px){.bento-grid{grid-template-columns:1fr}}
-.bc{background:rgba(17,17,20,.8);border-radius:28px;border:1px solid var(--border);padding:36px 30px;display:flex;flex-direction:column;align-items:flex-start;min-height:260px;cursor:none;transition:transform .4s cubic-bezier(.16,1,.3,1),background .3s;backdrop-filter:blur(10px)}
+
+/* ── BUTTONS ── */
+.btn{padding:11px 24px;border-radius:28px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:7px;transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s}
+.btnp{background:var(--text);color:#000}.btnp:hover{transform:scale(1.04);box-shadow:0 7px 26px rgba(255,255,255,.14)}
+.btng{background:rgba(255,255,255,.09);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.16)}.btng:hover{background:rgba(255,255,255,.17);transform:scale(1.04)}
+.btna{background:var(--ac);color:#fff}.btna:hover{transform:scale(1.04);box-shadow:0 7px 26px rgba(61,142,248,.32)}
+.sm{padding:7px 15px;font-size:12px}
+
+/* ── HERO ── */
+.hw{position:relative;height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 40px 200px;overflow:hidden}
+@media(max-width:768px){.hw{padding:0 20px 220px}}
+#ytw{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+#ytw iframe{position:absolute;top:50%;left:50%;width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw;transform:translate(-50%,-50%);pointer-events:none}
+.hov{position:absolute;inset:0;z-index:1;background:linear-gradient(0deg,rgba(7,7,10,1) 0%,rgba(7,7,10,.48) 52%,rgba(7,7,10,.18) 100%)}
+.hfade{position:absolute;inset:0;z-index:2;background:var(--bg);opacity:0;transition:opacity .5s;pointer-events:none}
+.hcnt{position:relative;z-index:3;max-width:880px;transition:opacity .38s,transform .38s}
+.vtabs{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;margin-bottom:4px}
+.vtab{padding:4px 13px;border-radius:11px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);transition:all .2s;background:rgba(255,255,255,.05);text-shadow:none}
+.vtab:hover,.vtab.av{background:rgba(255,255,255,.14);color:#fff}
+/* VIDEO CONTROLS — fixed pos above carousel, always clickable */
+.hvctl{position:absolute;bottom:176px;right:40px;z-index:10;display:flex;gap:7px}
+@media(max-width:768px){.hvctl{right:20px;bottom:192px}}
+.vbtn{width:40px;height:40px;border-radius:20px;background:rgba(255,255,255,.13);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:15px;transition:background .2s,transform .18s}
+.vbtn:hover{background:rgba(255,255,255,.26);transform:scale(1.1)}
+
+/* ── CAROUSEL ── */
+.csec{position:relative;z-index:5;padding-bottom:20px}
+.clbl{padding-left:40px;margin-bottom:9px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.1em;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+@media(max-width:768px){.clbl{padding-left:20px}}
+.srow{display:flex;gap:15px;overflow-x:auto;padding:0 40px 18px;scroll-snap-type:x mandatory;scrollbar-width:none}
+.srow::-webkit-scrollbar{display:none}
+@media(max-width:768px){.srow{padding:0 20px 18px}}
+.pc2{flex:0 0 150px;aspect-ratio:2/3;border-radius:13px;background-size:cover;background-position:center;border:2px solid transparent;cursor:none;transition:transform .4s cubic-bezier(.16,1,.3,1),border-color .3s,box-shadow .4s;scroll-snap-align:start;box-shadow:0 7px 22px rgba(0,0,0,.5)}
+@media(min-width:768px){.pc2{flex:0 0 172px}}
+.pc2:hover{transform:scale(1.06) translateY(-8px);border-color:rgba(255,255,255,.75);box-shadow:0 18px 38px rgba(0,0,0,.6)}
+.pc2.ap{border-color:var(--ac);box-shadow:0 0 0 3px rgba(61,142,248,.22),0 18px 38px rgba(0,0,0,.6)}
+
+/* ── BENTO ── */
+.bsec{max-width:1200px;margin:0 auto;padding:56px 40px;text-align:center}
+@media(max-width:768px){.bsec{padding:36px 20px}}
+.bgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:32px;text-align:left}
+@media(max-width:768px){.bgrid{grid-template-columns:1fr}}
+.bc{background:rgba(17,17,20,.8);border-radius:26px;border:1px solid var(--bd);padding:32px 28px;display:flex;flex-direction:column;align-items:flex-start;min-height:250px;cursor:none;transition:transform .4s cubic-bezier(.16,1,.3,1),background .3s;backdrop-filter:blur(10px)}
 .bc:hover{transform:scale(1.02);background:rgba(22,22,26,.9)}
-.bc i{font-size:48px;color:var(--accent);margin-bottom:18px}
-.bc h3{font-family:var(--serif);font-size:20px;margin-bottom:8px;font-weight:600;line-height:1.3}
+.bc i{font-size:46px;color:var(--ac);margin-bottom:16px}
+.bc h3{font-family:var(--sr);font-size:19px;margin-bottom:7px;font-weight:600;line-height:1.3}
 .bc.s3{grid-column:span 3}.bc.s4{grid-column:span 4}.bc.s2{grid-column:span 2}
-.bc.ai{background:linear-gradient(135deg,rgba(17,17,20,.9),rgba(0,20,40,.9));border-color:rgba(49,145,151,.3)}
-.bc.ai i{color:#319197}
+.bc.aic{background:linear-gradient(135deg,rgba(17,17,20,.9),rgba(0,18,36,.9));border-color:rgba(49,145,151,.3)}
+.bc.aic i{color:#319197}
 @media(max-width:768px){.bc.s3,.bc.s4,.bc.s2{grid-column:span 1}}
-/* TRENDING */
-.trend-sec{max-width:1200px;margin:0 auto;padding:20px 40px 60px}
-@media(max-width:768px){.trend-sec{padding:20px 20px 60px}}
-.trend-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:24px}
-@media(max-width:640px){.trend-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ── TRENDING ── */
+.tsec{max-width:1200px;margin:0 auto;padding:16px 40px 56px}
+@media(max-width:768px){.tsec{padding:16px 20px 50px}}
+.tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:22px}
+@media(max-width:640px){.tgrid{grid-template-columns:repeat(2,1fr)}}
 .ti{cursor:none;transition:transform .3s}
 .ti:hover{transform:translateY(-6px)}
-.ti-poster{width:100%;aspect-ratio:2/3;border-radius:14px;background-size:cover;background-position:center;margin-bottom:10px;box-shadow:0 10px 30px rgba(0,0,0,.5);border:1px solid var(--border)}
-.ti h4{font-size:15px;font-weight:600;margin-bottom:3px}
-.ti p{font-size:13px;color:var(--muted)}
-/* PROFILE */
-.prof-hdr{display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap}
-.av-wrap{position:relative;width:100px;flex-shrink:0}
-.av{width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--border);box-shadow:0 16px 40px rgba(0,0,0,.5)}
-.av-edit{position:absolute;bottom:4px;right:0;width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 4px 12px rgba(61,142,248,.4)}
-.stats-row{display:flex;gap:24px;margin-top:14px;flex-wrap:wrap}
-.stat h5{font-family:var(--serif);font-size:26px;font-weight:700}
-.stat p{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-top:3px}
-.ptag{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:7px 14px;border-radius:20px;border:1px solid var(--border);font-size:13px;font-weight:500;background:rgba(255,255,255,.04)}
-.ptag i{color:var(--accent)}
-.sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px}
-.fav-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-@media(max-width:540px){.fav-grid{grid-template-columns:repeat(2,1fr)}}
-.fi{aspect-ratio:2/3;border-radius:12px;background-size:cover;background-position:center;cursor:none;border:1px solid var(--border);box-shadow:0 8px 24px rgba(0,0,0,.4);transition:transform .3s}
+.tiposter{width:100%;aspect-ratio:2/3;border-radius:13px;background-size:cover;background-position:center;margin-bottom:9px;box-shadow:0 9px 28px rgba(0,0,0,.5);border:1px solid var(--bd)}
+.ti h4{font-size:14px;font-weight:600;margin-bottom:2px}
+.ti p{font-size:12px;color:var(--mu)}
+
+/* ── PROFILE ── */
+.profhdr{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+.avwrap{position:relative;width:96px;flex-shrink:0}
+.av{width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid var(--bd);box-shadow:0 14px 36px rgba(0,0,0,.5)}
+.avedit{position:absolute;bottom:2px;right:0;width:26px;height:26px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 3px 10px rgba(61,142,248,.4)}
+.statrow{display:flex;gap:22px;margin-top:12px;flex-wrap:wrap}
+.stat h5{font-family:var(--sr);font-size:24px;font-weight:700}
+.stat p{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-top:2px}
+.ptag{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:6px 13px;border-radius:18px;border:1px solid var(--bd);font-size:12px;font-weight:500;background:rgba(255,255,255,.04);color:var(--mu)}
+.sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+@media(max-width:540px){.fgrid{grid-template-columns:repeat(2,1fr)}}
+.fi{aspect-ratio:2/3;border-radius:11px;background-size:cover;background-position:center;cursor:none;border:1px solid var(--bd);box-shadow:0 7px 22px rgba(0,0,0,.4);transition:transform .3s}
 .fi:hover{transform:scale(1.04)}
-.diary-list{display:flex;flex-direction:column;gap:14px;margin-top:24px}
-.dc{display:flex;gap:16px;background:rgba(17,17,20,.7);border-radius:18px;padding:18px;border:1px solid var(--border);flex-wrap:wrap;backdrop-filter:blur(10px)}
-.dt{width:76px;height:114px;border-radius:9px;background-size:cover;background-position:center;flex-shrink:0;border:1px solid var(--border)}
-.dstars{color:var(--star);font-size:15px;margin:7px 0 4px}
-.style-card{background:linear-gradient(135deg,rgba(30,0,60,.8),rgba(0,10,50,.8));border:1px solid rgba(100,50,200,.3);border-radius:24px;padding:32px;margin-top:44px;position:relative;overflow:hidden}
-.style-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(124,58,237,.3),rgba(61,142,248,.2),rgba(49,145,151,.2));opacity:1;filter:blur(50px);pointer-events:none}
-.stags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-.stag{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:5px}
-.tp-tag{background:linear-gradient(135deg,#7c3aed,#3d8ef8);color:#fff}
-.ts-tag{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:var(--muted)}
-/* FILM LOG */
-.log-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}
-.filter-btn{padding:8px 16px;border-radius:14px;font-size:13px;font-weight:600;border:1px solid var(--border);color:var(--muted);background:rgba(255,255,255,.04);transition:all .2s}
-.filter-btn:hover,.filter-btn.active{background:rgba(255,255,255,.12);color:var(--text);border-color:rgba(255,255,255,.25)}
-.log-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:16px}
-.lg-item{cursor:none;transition:transform .3s}
-.lg-item:hover{transform:scale(1.05)}
-.lg-poster{width:100%;aspect-ratio:2/3;border-radius:12px;background-size:cover;background-position:center;border:1px solid var(--border);margin-bottom:8px;position:relative;overflow:hidden}
-.lg-rating{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.75);padding:3px 8px;border-radius:8px;font-size:12px;font-weight:700;color:var(--star)}
-.lg-item h4{font-size:13px;font-weight:600;margin-bottom:2px}
-.lg-item p{font-size:11px;color:var(--muted)}
-/* COMMUNITY */
-.feed{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
-.fc{display:flex;gap:14px;background:rgba(17,17,20,.7);border-radius:22px;padding:20px;border:1px solid var(--border);cursor:none;transition:background .2s,transform .2s;backdrop-filter:blur(10px)}
-.fc:hover{background:rgba(22,22,28,.9);transform:translateY(-3px)}
-.fav{width:44px;height:44px;border-radius:22px;background-size:cover;background-position:center;flex-shrink:0}
+.dlist{display:flex;flex-direction:column;gap:13px;margin-top:22px}
+.dc{display:flex;gap:15px;background:rgba(17,17,20,.7);border-radius:16px;padding:17px;border:1px solid var(--bd);flex-wrap:wrap;backdrop-filter:blur(10px)}
+.dt{width:72px;height:108px;border-radius:9px;background-size:cover;background-position:center;flex-shrink:0;border:1px solid var(--bd)}
+.dstr{color:var(--star);font-size:14px;margin:6px 0 3px}
+.scard{background:linear-gradient(135deg,rgba(28,0,55,.8),rgba(0,9,45,.8));border:1px solid rgba(100,50,200,.3);border-radius:22px;padding:30px;margin-top:40px;position:relative;overflow:hidden}
+.scard::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(124,58,237,.28),rgba(61,142,248,.18),rgba(49,145,151,.18));filter:blur(50px);pointer-events:none}
+.stags{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+.stag{padding:6px 14px;border-radius:18px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px}
+.tgp{background:linear-gradient(135deg,#7c3aed,#3d8ef8);color:#fff}
+.tgs{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:var(--mu)}
+
+/* ── FILM LOG ── */
+.lfil{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+.fb2{padding:7px 15px;border-radius:13px;font-size:12px;font-weight:600;border:1px solid var(--bd);color:var(--mu);background:rgba(255,255,255,.04);transition:all .2s}
+.fb2:hover,.fb2.active{background:rgba(255,255,255,.11);color:var(--text);border-color:rgba(255,255,255,.22)}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:14px}
+.lgi{cursor:none;transition:transform .3s}
+.lgi:hover{transform:scale(1.04)}
+.lgp{width:100%;aspect-ratio:2/3;border-radius:11px;background-size:cover;background-position:center;border:1px solid var(--bd);margin-bottom:7px;position:relative;overflow:hidden}
+.lgr{position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,.75);padding:2px 7px;border-radius:7px;font-size:11px;font-weight:700;color:var(--star)}
+.lgi h4{font-size:12px;font-weight:600;margin-bottom:1px}
+.lgi p{font-size:11px;color:var(--mu)}
+
+/* ── COMMUNITY ── */
+.feed{max-width:700px;margin:0 auto;display:flex;flex-direction:column;gap:13px}
+.fcard{display:flex;gap:13px;background:rgba(17,17,20,.7);border-radius:20px;padding:19px;border:1px solid var(--bd);cursor:none;transition:background .2s,transform .2s;backdrop-filter:blur(10px)}
+.fcard:hover{background:rgba(22,22,28,.9);transform:translateY(-3px)}
+.fav2{width:42px;height:42px;border-radius:21px;background-size:cover;background-position:center;flex-shrink:0}
 .fb{flex:1;min-width:0}
-.fm{font-size:15px;margin-bottom:6px;color:var(--muted)}
+.fm{font-size:14px;margin-bottom:5px;color:var(--mu)}
 .fm strong{color:var(--text)}
-.fst{color:var(--star);font-size:14px;margin-bottom:6px}
-.fth{width:68px;height:102px;border-radius:9px;background-size:cover;background-position:center;flex-shrink:0;border:1px solid var(--border)}
-.com-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
-@media(max-width:640px){.com-grid{grid-template-columns:1fr}}
-.com-panel{background:rgba(17,17,20,.7);border-radius:22px;padding:22px;border:1px solid var(--border);backdrop-filter:blur(10px)}
-.friend-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
-.friend-item:last-child{border-bottom:none}
-.friend-av{width:38px;height:38px;border-radius:19px;background-size:cover;background-position:center;flex-shrink:0;border:1px solid var(--border)}
-.friend-info h4{font-size:14px;font-weight:600}
-.friend-info p{font-size:12px;color:var(--muted)}
-.trending-pill{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
-.trending-pill:last-child{border-bottom:none}
-.tp-rank{font-size:18px;font-weight:700;font-family:var(--serif);color:rgba(255,255,255,.2);width:24px}
-.tp-info h4{font-size:13px;font-weight:600}
-.tp-info p{font-size:11px;color:var(--muted)}
-.tp-count{margin-left:auto;font-size:12px;font-weight:600;color:var(--accent)}
-/* REVIEW DETAIL */
-.rv-detail{background:rgba(17,17,20,.7);border-radius:22px;padding:26px;border:1px solid var(--border);margin-bottom:16px;backdrop-filter:blur(10px)}
-.rv-acts{display:flex;gap:10px;margin-top:14px}
-.act-btn{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:500;padding:8px 14px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid var(--border);transition:background .2s,color .2s}
-.act-btn:hover{background:rgba(255,255,255,.12);color:var(--accent)}
-.act-btn.liked{color:var(--star)}
-.cmb{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:14px;padding:13px;width:100%;color:var(--text);font-family:var(--sans);font-size:15px;outline:none;transition:border-color .2s;resize:none;height:88px;user-select:text}
-.cmb:focus{border-color:var(--accent)}
-/* LISTS */
-.lists-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
-@media(max-width:540px){.lists-grid{grid-template-columns:1fr}}
+.fst{color:var(--star);font-size:13px;margin-bottom:5px}
+.fth{width:65px;height:97px;border-radius:9px;background-size:cover;background-position:center;flex-shrink:0;border:1px solid var(--bd)}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:30px}
+@media(max-width:640px){.cgrid{grid-template-columns:1fr}}
+.cpanel{background:rgba(17,17,20,.7);border-radius:20px;padding:20px;border:1px solid var(--bd);backdrop-filter:blur(10px)}
+.fri{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.fri:last-child{border:none}
+.fav3{width:36px;height:36px;border-radius:18px;background-size:cover;background-position:center;flex-shrink:0}
+.fri-info h4{font-size:13px;font-weight:600}
+.fri-info p{font-size:11px;color:var(--mu)}
+.tpill{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.tpill:last-child{border:none}
+.trnk{font-size:16px;font-weight:700;font-family:var(--sr);color:rgba(255,255,255,.2);width:20px}
+.trinfo h4{font-size:12px;font-weight:600}
+.trinfo p{font-size:10px;color:var(--mu)}
+.trcnt{margin-left:auto;font-size:11px;font-weight:700;color:var(--ac)}
+
+/* ── REVIEW ── */
+.rvd{background:rgba(17,17,20,.7);border-radius:20px;padding:24px;border:1px solid var(--bd);margin-bottom:14px;backdrop-filter:blur(10px)}
+.rvacts{display:flex;gap:9px;margin-top:13px}
+.abt{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:7px 13px;border-radius:11px;background:rgba(255,255,255,.06);border:1px solid var(--bd);transition:background .2s,color .2s}
+.abt:hover{background:rgba(255,255,255,.12);color:var(--ac)}
+.abt.liked{color:var(--star)}
+.cmb{background:rgba(0,0,0,.3);border:1px solid var(--bd);border-radius:13px;padding:12px;width:100%;color:var(--text);font-family:var(--ss);font-size:14px;outline:none;transition:border-color .2s;resize:none;height:84px}
+.cmb:focus{border-color:var(--ac)}
+
+/* ── LISTS ── */
+.lgrd{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+@media(max-width:540px){.lgrd{grid-column:1fr}}
 .lcard{cursor:none;transition:transform .3s}
-.lcard:hover{transform:translateY(-8px)}
-.lcov{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;border-radius:16px;overflow:hidden;aspect-ratio:1;box-shadow:0 16px 40px rgba(0,0,0,.5);margin-bottom:14px;border:1px solid var(--border)}
+.lcard:hover{transform:translateY(-7px)}
+.lcov{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;border-radius:15px;overflow:hidden;aspect-ratio:1;box-shadow:0 14px 36px rgba(0,0,0,.5);margin-bottom:13px;border:1px solid var(--bd)}
 .lcov div{background-size:cover;background-position:center}
-.lcard h3{font-family:var(--serif);font-size:18px;margin-bottom:3px}
-.new-list-btn{display:flex;align-items:center;justify-content:center;gap:8px;aspect-ratio:1;border-radius:16px;border:2px dashed rgba(255,255,255,.12);transition:border-color .3s,background .3s;font-size:14px;font-weight:500;color:var(--muted);cursor:none;min-height:160px}
-.new-list-btn:hover{border-color:var(--accent);background:rgba(61,142,248,.05);color:var(--accent)}
-.ld-cover{width:150px;height:150px;border-radius:14px;background-size:cover;background-position:center;border:1px solid var(--border);box-shadow:0 14px 36px rgba(0,0,0,.5);flex-shrink:0}
-.mosaic{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:16px;margin-top:22px}
+.lcard h3{font-family:var(--sr);font-size:17px;margin-bottom:3px}
+.nlbtn{display:flex;align-items:center;justify-content:center;gap:7px;aspect-ratio:1;border-radius:15px;border:2px dashed rgba(255,255,255,.11);transition:border-color .3s,background .3s;font-size:13px;font-weight:500;color:var(--mu);cursor:none;min-height:150px}
+.nlbtn:hover{border-color:var(--ac);background:rgba(61,142,248,.05);color:var(--ac)}
+.ldcov{width:140px;height:140px;border-radius:13px;background-size:cover;background-position:center;border:1px solid var(--bd);box-shadow:0 13px 34px rgba(0,0,0,.5);flex-shrink:0}
+.mosaic{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:14px;margin-top:20px}
 .mi{cursor:none;transition:transform .3s}
 .mi:hover{transform:scale(1.05)}
-.mp{width:100%;aspect-ratio:2/3;border-radius:11px;background-size:cover;background-position:center;border:1px solid var(--border);margin-bottom:7px}
-.mi h4{font-size:13px;font-weight:600}
-.mi p{font-size:11px;color:var(--muted)}
-/* AI */
-.ai-wrap{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative}
-.ai-orb{width:160px;height:160px;border-radius:50%;margin:0 auto 32px;background:conic-gradient(from 0deg,#ff7a18,#af002d,#319197,#3d8ef8,#ff7a18);animation:orbS 6s linear infinite;box-shadow:0 0 60px rgba(49,145,151,.4),0 0 120px rgba(255,122,24,.2);display:flex;align-items:center;justify-content:center;position:relative}
-.ai-orb::before{content:'';position:absolute;inset:4px;border-radius:50%;background:var(--bg)}
-.ai-orb i{position:relative;z-index:1;font-size:52px;color:#fff}
-.ai-ana .ai-orb{animation:orbS 1s linear infinite;box-shadow:0 0 100px rgba(49,145,151,.9),0 0 200px rgba(255,122,24,.6)}
+.mp{width:100%;aspect-ratio:2/3;border-radius:10px;background-size:cover;background-position:center;border:1px solid var(--bd);margin-bottom:6px}
+
+/* ── AI ── */
+.aiwrap{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative}
+.aiorb{width:155px;height:155px;border-radius:50%;margin:0 auto 30px;background:conic-gradient(from 0deg,#ff7a18,#af002d,#319197,#3d8ef8,#ff7a18);animation:orbS 6s linear infinite;box-shadow:0 0 55px rgba(49,145,151,.4),0 0 110px rgba(255,122,24,.2);display:flex;align-items:center;justify-content:center;position:relative}
+.aiorb::before{content:'';position:absolute;inset:4px;border-radius:50%;background:var(--bg)}
+.aiorb i{position:relative;z-index:1;font-size:50px;color:#fff}
+.aianalyzin .aiorb{animation:orbS .9s linear infinite;box-shadow:0 0 95px rgba(49,145,151,.9),0 0 180px rgba(255,122,24,.6)}
 @keyframes orbS{from{filter:hue-rotate(0)}to{filter:hue-rotate(360deg)}}
-.ai-glow-btn{background:rgba(17,17,20,.8);border:1px solid rgba(255,255,255,.15);padding:17px 36px;border-radius:40px;font-size:18px;font-weight:700;box-shadow:0 0 40px rgba(61,142,248,.15);cursor:none;transition:all .4s;display:inline-flex;align-items:center;gap:10px;backdrop-filter:blur(20px)}
-.ai-glow-btn:hover{box-shadow:0 0 70px rgba(61,142,248,.4);transform:scale(1.05);border-color:rgba(61,142,248,.4)}
-#ai-loader{display:none;margin-top:28px;font-size:15px;color:var(--accent)}
-#ai-result{display:none;margin-top:44px;text-align:left;width:100%;max-width:680px;background:rgba(17,17,20,.8);border-radius:26px;padding:26px;border:1px solid var(--border);backdrop-filter:blur(20px);position:relative;overflow:hidden}
-.air-inner{display:flex;gap:22px;align-items:center;flex-wrap:wrap;position:relative;z-index:1}
-.air-inner img{width:130px;border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.6)}
-.mbadge{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#ff7a18;margin-bottom:7px}
-/* MOVIE DETAIL */
-.md-wrap{position:relative;padding-top:90px}
-.md-art{position:absolute;top:0;left:0;width:100%;height:65vh;z-index:0;background-size:cover;background-position:center;mask-image:linear-gradient(180deg,rgba(0,0,0,.6) 0%,transparent 100%);-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.6) 0%,transparent 100%);filter:blur(2px) saturate(1.2)}
-.md-inner{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:60px 40px}
-@media(max-width:768px){.md-inner{padding:40px 20px}}
-.md-flex{display:flex;gap:40px;flex-wrap:wrap}
-.md-left{flex-shrink:0;display:flex;flex-direction:column;gap:12px;width:240px}
-@media(max-width:768px){.md-left{width:150px}}
-.md-poster{width:100%;border-radius:18px;box-shadow:0 28px 60px rgba(0,0,0,.8);border:1px solid var(--border);display:block}
-.md-info{flex:1;min-width:260px}
-.md-meta{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:15px;margin:12px 0 18px;flex-wrap:wrap}
-.md-dot{width:4px;height:4px;border-radius:2px;background:var(--muted)}
-.rrow{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
-.rchip{display:flex;align-items:center;gap:5px;padding:7px 13px;border-radius:11px;font-size:13px;font-weight:600;border:1px solid var(--border);background:rgba(255,255,255,.06);text-decoration:none;transition:background .2s}
+.aigbtn{background:rgba(17,17,20,.8);border:1px solid rgba(255,255,255,.14);padding:16px 34px;border-radius:38px;font-size:17px;font-weight:700;box-shadow:0 0 38px rgba(61,142,248,.14);cursor:none;transition:all .4s;display:inline-flex;align-items:center;gap:10px;backdrop-filter:blur(18px)}
+.aigbtn:hover{box-shadow:0 0 65px rgba(61,142,248,.42);transform:scale(1.05);border-color:rgba(61,142,248,.38)}
+#ai-loader{display:none;margin-top:26px;font-size:14px;color:var(--ac)}
+#ai-result{display:none;margin-top:40px;text-align:left;width:100%;max-width:660px;background:rgba(17,17,20,.8);border-radius:24px;padding:24px;border:1px solid var(--bd);backdrop-filter:blur(18px);position:relative;overflow:hidden}
+.airinn{display:flex;gap:20px;align-items:center;flex-wrap:wrap;position:relative;z-index:1}
+.airinn img{width:120px;border-radius:11px;box-shadow:0 13px 34px rgba(0,0,0,.6)}
+.mbadge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#ff7a18;margin-bottom:6px}
+
+/* ── MOVIE DETAIL ── */
+.mdwrap{position:relative;padding-top:88px}
+.mdart{position:absolute;top:0;left:0;width:100%;height:62vh;z-index:0;background-size:cover;background-position:center;mask-image:linear-gradient(180deg,rgba(0,0,0,.6) 0%,transparent 100%);-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.6) 0%,transparent 100%);filter:blur(2px) saturate(1.15)}
+.mdinn{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:56px 40px}
+@media(max-width:768px){.mdinn{padding:36px 20px}}
+.mdflex{display:flex;gap:36px;flex-wrap:wrap}
+.mdleft{flex-shrink:0;display:flex;flex-direction:column;gap:11px;width:228px}
+@media(max-width:768px){.mdleft{width:144px}}
+.mdpost{width:100%;border-radius:17px;box-shadow:0 26px 56px rgba(0,0,0,.8);border:1px solid var(--bd);display:block}
+.mdinfo{flex:1;min-width:250px}
+.mdmeta{display:flex;gap:9px;align-items:center;color:var(--mu);font-size:14px;margin:10px 0 16px;flex-wrap:wrap}
+.mddot{width:3px;height:3px;border-radius:50%;background:var(--mu)}
+.rrow{display:flex;gap:11px;flex-wrap:wrap;margin-bottom:18px}
+.rchip{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid var(--bd);background:rgba(255,255,255,.06);text-decoration:none;transition:background .2s}
 .rchip:hover{background:rgba(255,255,255,.12)}
-.rchip img{width:16px;height:auto}
-.sdiv{border:none;border-top:1px solid var(--border);margin:30px 0}
-.qb{padding:18px 22px;border-left:3px solid var(--accent);background:rgba(61,142,248,.06);border-radius:0 12px 12px 0;margin-bottom:12px}
-.qb p{font-family:var(--serif);font-size:16px;font-style:italic;margin-bottom:5px;line-height:1.55}
-.qb cite{font-size:12px;color:var(--muted)}
-.ff-card{background:rgba(17,17,20,.7);border:1px solid var(--border);border-radius:18px;padding:22px 26px;margin-top:26px;position:relative;overflow:hidden;backdrop-filter:blur(10px)}
-.ff-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--star);margin-bottom:9px;display:flex;align-items:center;gap:5px}
-#ff-text{font-size:15px;line-height:1.65;transition:opacity .4s}
-.why-card{background:linear-gradient(135deg,rgba(30,10,60,.7),rgba(10,20,50,.7));border:1px solid rgba(100,50,200,.2);border-radius:18px;padding:22px 26px;margin-top:14px;backdrop-filter:blur(10px)}
-.why-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#7c3aed;margin-bottom:9px;display:flex;align-items:center;gap:5px}
-/* STILLS */
-.stills-sec{margin-top:28px}
-.stills-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
-.still{width:100%;aspect-ratio:16/9;border-radius:10px;object-fit:cover;border:1px solid var(--border);transition:transform .3s,opacity .3s;cursor:none}
-.still:hover{transform:scale(1.02);opacity:.9}
-/* SOUNDTRACK PLAYER */
-.snd-player{background:rgba(17,17,20,.8);border:1px solid var(--border);border-radius:16px;padding:14px 18px;margin-top:12px;display:flex;align-items:center;gap:12px;backdrop-filter:blur(10px)}
-.snd-info{flex:1}
-.snd-title{font-size:13px;font-weight:600;margin-bottom:2px}
-.snd-sub{font-size:11px;color:var(--muted)}
-.snd-ctls{display:flex;gap:8px;align-items:center}
-.snd-btn{width:34px;height:34px;border-radius:17px;background:rgba(255,255,255,.1);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;transition:background .2s}
-.snd-btn:hover{background:rgba(255,255,255,.2)}
-.snd-btn.playing{background:rgba(61,142,248,.2);border-color:rgba(61,142,248,.4);color:var(--accent)}
-#snd-yt-wrap{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
-/* MODALS */
-.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(20px);z-index:800;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s}
-.moverlay.open{opacity:1;pointer-events:all}
-.mcard{background:rgba(16,16,20,.96);border:1px solid var(--border);border-radius:26px;padding:28px;width:90%;max-width:480px;box-shadow:0 40px 80px rgba(0,0,0,.8);transform:scale(.94) translateY(20px);transition:transform .4s cubic-bezier(.16,1,.3,1);backdrop-filter:blur(40px);max-height:90vh;overflow-y:auto}
-.moverlay.open .mcard{transform:scale(1) translateY(0)}
-.mhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
-.mhdr h2{font-family:var(--serif);font-size:21px}
-.xbtn{width:32px;height:32px;border-radius:16px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:15px;transition:background .2s;cursor:none}
+.rchip img{width:15px;height:auto}
+.sdiv{border:none;border-top:1px solid var(--bd);margin:26px 0}
+.qb{padding:16px 20px;border-left:3px solid var(--ac);background:rgba(61,142,248,.06);border-radius:0 11px 11px 0;margin-bottom:10px}
+.qb p{font-family:var(--sr);font-size:15px;font-style:italic;margin-bottom:4px;line-height:1.55;user-select:text}
+.qb cite{font-size:11px;color:var(--mu)}
+.ffcard{background:rgba(17,17,20,.7);border:1px solid var(--bd);border-radius:16px;padding:20px 24px;margin-top:24px;position:relative;overflow:hidden;backdrop-filter:blur(10px)}
+.fflbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--star);margin-bottom:8px;display:flex;align-items:center;gap:4px}
+#fftext{font-size:14px;line-height:1.65;transition:opacity .4s;user-select:text}
+.whycard{background:linear-gradient(135deg,rgba(28,9,55,.7),rgba(9,18,46,.7));border:1px solid rgba(100,50,200,.2);border-radius:16px;padding:20px 24px;margin-top:13px;backdrop-filter:blur(10px)}
+.whylbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#7c3aed;margin-bottom:8px;display:flex;align-items:center;gap:4px}
+/* Stills */
+.stgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.still{width:100%;aspect-ratio:16/9;border-radius:9px;object-fit:cover;border:1px solid var(--bd);transition:transform .3s,opacity .3s;cursor:none}
+.still:hover{transform:scale(1.02);opacity:.88}
+/* Soundtrack player */
+.sndp{background:rgba(17,17,20,.8);border:1px solid var(--bd);border-radius:14px;padding:12px 16px;margin-top:10px;display:flex;align-items:center;gap:10px;backdrop-filter:blur(10px)}
+.sndinf{flex:1}
+.sndt{font-size:12px;font-weight:600;margin-bottom:1px}
+.snds{font-size:10px;color:var(--mu)}
+.sndctls{display:flex;gap:6px}
+.sndbtn{width:32px;height:32px;border-radius:16px;background:rgba(255,255,255,.09);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:13px;transition:background .2s}
+.sndbtn:hover{background:rgba(255,255,255,.18)}
+.sndbtn.playing{background:rgba(61,142,248,.18);border-color:rgba(61,142,248,.35);color:var(--ac)}
+#sndytw{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+/* ── MODALS ── */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(18px);z-index:800;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .32s}
+.mov.open{opacity:1;pointer-events:all}
+.mcard{background:rgba(15,15,19,.97);border:1px solid var(--bd);border-radius:24px;padding:26px;width:90%;max-width:460px;box-shadow:0 38px 76px rgba(0,0,0,.8);transform:scale(.94) translateY(18px);transition:transform .4s cubic-bezier(.16,1,.3,1);backdrop-filter:blur(36px);max-height:90vh;overflow-y:auto}
+.mov.open .mcard{transform:scale(1) translateY(0)}
+.mhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.mhdr h2{font-family:var(--sr);font-size:20px}
+.xbtn{width:30px;height:30px;border-radius:15px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:14px;transition:background .2s;cursor:none}
 .xbtn:hover{background:rgba(255,255,255,.16)}
-.frow{margin-bottom:18px}
-.frow label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
-.finp{width:100%;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:12px;padding:12px 15px;color:var(--text);font-family:var(--sans);font-size:15px;outline:none;transition:border-color .2s;user-select:text}
-.finp:focus{border-color:var(--accent)}
-textarea.finp{height:100px;resize:none}
+.frow{margin-bottom:16px}
+.frow label{display:block;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.finp{width:100%;background:rgba(0,0,0,.4);border:1px solid var(--bd);border-radius:11px;padding:11px 14px;color:var(--text);font-family:var(--ss);font-size:14px;outline:none;transition:border-color .2s}
+.finp:focus{border-color:var(--ac)}
+textarea.finp{height:96px;resize:none}
 select.finp{cursor:none;background:rgba(0,0,0,.5)}
-.star-row{display:flex;gap:7px;font-size:26px;color:#333;cursor:none}
-.star-row i.lit{color:var(--star)}
-/* ONBOARDING */
-#onboarding{position:fixed;inset:0;z-index:2000;background:rgba(7,7,10,.98);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(30px)}
-.ob-card{width:90%;max-width:520px;text-align:center}
-.ob-logo{font-family:var(--serif);font-size:32px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px}
-.ob-logo i{color:var(--accent)}
-.ob-steps{display:flex;justify-content:center;gap:6px;margin:24px 0}
-.ob-step{width:28px;height:4px;border-radius:2px;background:rgba(255,255,255,.15);transition:background .3s}
-.ob-step.active{background:var(--accent)}
-.ob-step.done{background:rgba(61,142,248,.4)}
-.ob-body{min-height:220px;display:flex;flex-direction:column;justify-content:center}
-.genre-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
-.genre-btn{padding:10px 8px;border-radius:14px;border:1px solid var(--border);font-size:13px;font-weight:500;color:var(--muted);background:rgba(255,255,255,.04);transition:all .2s;text-align:center;cursor:none}
-.genre-btn.sel{border-color:var(--accent);background:rgba(61,142,248,.15);color:var(--text)}
-/* MISC */
+.starrow{display:flex;gap:6px;font-size:25px;color:#333;cursor:none}
+.starrow i.lit{color:var(--star)}
+
+/* ── ONBOARDING ── */
+#ob{position:fixed;inset:0;z-index:2000;background:rgba(7,7,10,.98);display:flex;align-items:center;justify-content:center}
+.obcard{width:90%;max-width:500px;text-align:center}
+.oblogo{font-family:var(--sr);font-size:30px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:7px}
+.oblogo i{color:var(--ac)}
+.obsteps{display:flex;justify-content:center;gap:5px;margin:20px 0}
+.obs{width:26px;height:3px;border-radius:2px;background:rgba(255,255,255,.14);transition:background .3s}
+.obs.active{background:var(--ac)}
+.obs.done{background:rgba(61,142,248,.38)}
+.obbody{min-height:210px;display:flex;flex-direction:column;justify-content:center}
+.ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px}
+.gbtn{padding:9px 7px;border-radius:12px;border:1px solid var(--bd);font-size:12px;font-weight:500;color:var(--mu);background:rgba(255,255,255,.04);transition:all .2s;text-align:center;cursor:none}
+.gbtn.sel{border-color:var(--ac);background:rgba(61,142,248,.14);color:var(--text)}
+
+/* ── MISC ── */
 .no-scroll{overflow:hidden}
-.reveal{opacity:0;transform:translateY(36px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
-.reveal.active{opacity:1;transform:translateY(0)}
+.rev{opacity:0;transform:translateY(34px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.rev.active{opacity:1;transform:translateY(0)}
 .spin{animation:sp 1.2s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+#sndytw{position:fixed;left:-9999px;width:1px;height:1px}
 </style>
 </head>
 <body>
 
 <canvas id="bg-canvas"></canvas>
-<div id="cur-ring"></div>
-<div id="cur-dot"></div>
-<!-- Hidden soundtrack YT container -->
-<div id="snd-yt-wrap"><div id="snd-yt-player"></div></div>
+<div id="cring"></div>
+<div id="cdot"></div>
+<div id="sndytw"><div id="snd-yt-player"></div></div>
 
-<!-- ONBOARDING -->
-<div id="onboarding">
-  <div class="ob-card">
-    <div class="ob-logo"><i class="ph-fill ph-film-strip"></i> CineLog</div>
-    <p class="tb" style="margin-bottom:4px">Your personal cinema universe.</p>
-    <div class="ob-steps">
-      <div class="ob-step active" id="obs-0"></div>
-      <div class="ob-step" id="obs-1"></div>
-      <div class="ob-step" id="obs-2"></div>
-    </div>
-    <div class="ob-body" id="ob-body"></div>
-    <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:24px" id="ob-next" onclick="obNext()">Continue <i class="ph-bold ph-arrow-right"></i></button>
+<!-- ══ ONBOARDING ══ -->
+<div id="ob">
+  <div class="obcard">
+    <div class="oblogo"><i class="ph-fill ph-film-strip"></i> CineLog</div>
+    <p class="tb" style="font-size:14px">Your personal cinema universe.</p>
+    <div class="obsteps"><div class="obs active" id="obs0"></div><div class="obs" id="obs1"></div><div class="obs" id="obs2"></div></div>
+    <div class="obbody" id="obbody"></div>
+    <button class="btn btnp" style="width:100%;justify-content:center;margin-top:20px" id="obnext" onclick="obNext()">Continue <i class="ph-bold ph-arrow-right"></i></button>
   </div>
 </div>
 
-<!-- NAV -->
-<nav id="top-nav">
-  <div class="nav-logo" onclick="navigate('home')"><i class="ph-fill ph-film-strip"></i> CineLog</div>
-  <button id="back-btn" onclick="goBack()"><i class="ph-bold ph-arrow-left"></i> <span id="back-label">Back</span></button>
-  <div class="nav-links" id="nav-links">
-    <a onclick="navigate('home')" id="nav-home" class="active-nav"><i class="ph ph-compass"></i> Discover</a>
-    <a onclick="navigate('diary')" id="nav-diary"><i class="ph ph-user"></i> Profile</a>
-    <a onclick="navigate('filmlog')" id="nav-filmlog"><i class="ph ph-film-clapperboard"></i> My Films</a>
-    <a onclick="navigate('community')" id="nav-community"><i class="ph ph-users-three"></i> Community</a>
-    <a onclick="navigate('lists')" id="nav-lists"><i class="ph ph-list-dashes"></i> Lists</a>
-    <a onclick="navigate('ai')" id="nav-ai"><i class="ph ph-sparkle"></i> AI Engine</a>
+<!-- ══ NAV ══ -->
+<nav id="tnav">
+  <div class="nlogo" onclick="navigate('home')"><i class="ph-fill ph-film-strip"></i> CineLog</div>
+  <button id="backbtn" onclick="goBack()"><i class="ph-bold ph-arrow-left"></i> <span id="backlbl">Back</span></button>
+  <div class="nlinks" id="nlinks">
+    <a onclick="navigate('home')" id="n-home" class="an">Discover</a>
+    <a onclick="navigate('diary')" id="n-diary">Profile</a>
+    <a onclick="navigate('filmlog')" id="n-filmlog">My Films</a>
+    <a onclick="navigate('community')" id="n-community">Community</a>
+    <a onclick="navigate('lists')" id="n-lists">Lists</a>
+    <a onclick="navigate('ai')" id="n-ai">AI Engine</a>
   </div>
+  <button class="logq" onclick="openLogModal()"><i class="ph-bold ph-plus"></i> Log+</button>
 </nav>
-<button class="nav-fab" id="nav-fab" onclick="toggleFab()"><i class="ph-bold ph-list" id="fab-icon"></i></button>
-<div class="fab-dd" id="fab-dd">
-  <a onclick="navigate('home')" id="fn-home" class="active-nav"><i class="ph ph-compass"></i> Discover</a>
-  <a onclick="navigate('diary')" id="fn-diary"><i class="ph ph-user"></i> Profile</a>
-  <a onclick="navigate('filmlog')" id="fn-filmlog"><i class="ph ph-film-clapperboard"></i> My Films</a>
-  <a onclick="navigate('community')" id="fn-community"><i class="ph ph-users-three"></i> Community</a>
-  <a onclick="navigate('lists')" id="fn-lists"><i class="ph ph-list-dashes"></i> Lists</a>
-  <a onclick="navigate('ai')" id="fn-ai"><i class="ph ph-sparkle"></i> AI Engine</a>
+<button class="nfab" id="nfab" onclick="toggleFab()"><i class="ph-bold ph-list" id="fabicon"></i></button>
+<div class="fabdd" id="fabdd">
+  <a onclick="navigate('home')" id="fn-home" class="an">Discover</a>
+  <a onclick="navigate('diary')" id="fn-diary">Profile</a>
+  <a onclick="navigate('filmlog')" id="fn-filmlog">My Films</a>
+  <a onclick="navigate('community')" id="fn-community">Community</a>
+  <a onclick="navigate('lists')" id="fn-lists">Lists</a>
+  <a onclick="navigate('ai')" id="fn-ai">AI Engine</a>
+  <a onclick="openLogModal()" style="color:var(--ac)"><i class="ph-bold ph-plus"></i> Log Film</a>
 </div>
 
 <div id="app">
 
-<!-- HOME -->
+<!-- ══ HOME ══ -->
 <div id="view-home" class="view active">
-  <div class="hero-wrap">
-    <div id="yt-wrap"><div id="yt-player"></div></div>
-    <div class="hero-ov"></div>
-    <div class="hero-fade" id="hero-fade"></div>
-    <div class="hero-cnt hero-cnt-tr" id="hero-cnt">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.55);margin-bottom:8px;text-shadow:0 2px 8px rgba(0,0,0,.9)">Now Featuring</div>
-      <h1 class="th" id="h-title">Loading…</h1>
-      <div class="vid-tabs" id="vid-tabs"></div>
-      <p style="margin-top:8px;font-size:16px;color:rgba(255,255,255,.68);max-width:580px;text-shadow:0 2px 8px rgba(0,0,0,.9);line-height:1.6" id="h-desc"></p>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:24px">
-        <button class="btn btn-p" onclick="openLogModal()"><i class="ph-bold ph-plus"></i> Log this film</button>
-        <button class="btn btn-g" onclick="goToHeroMovie()"><i class="ph-bold ph-info"></i> Details</button>
+  <div class="hw">
+    <div id="ytw"><div id="yt-player"></div></div>
+    <div class="hov"></div>
+    <div class="hfade" id="hfade"></div>
+    <div class="hcnt" id="hcnt">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.5);margin-bottom:7px;text-shadow:0 2px 8px rgba(0,0,0,.9)">Now Featuring</div>
+      <h1 class="th" id="htitle">Loading…</h1>
+      <div class="vtabs" id="vtabs"></div>
+      <p style="margin-top:6px;font-size:15px;color:rgba(255,255,255,.65);max-width:560px;text-shadow:0 2px 10px rgba(0,0,0,.95);line-height:1.6" id="hdesc"></p>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:20px">
+        <button class="btn btnp" onclick="openLogModal()"><i class="ph-bold ph-plus"></i> Log this film</button>
+        <button class="btn btng" onclick="goToHeroMovie()"><i class="ph-bold ph-info"></i> Details</button>
       </div>
     </div>
-    <div class="hero-vctl">
-      <button class="vctl-btn" onclick="toggleMute()" title="Mute"><i class="ph-bold ph-speaker-slash" id="mute-icon"></i></button>
-      <button class="vctl-btn" onclick="togglePlay()" title="Pause"><i class="ph-bold ph-pause" id="play-icon"></i></button>
+    <div class="hvctl">
+      <button class="vbtn" onclick="toggleMute()"><i class="ph-bold ph-speaker-slash" id="muteico"></i></button>
+      <button class="vbtn" onclick="togglePlay()"><i class="ph-bold ph-pause" id="playico"></i></button>
     </div>
   </div>
-  <div class="car-sec">
-    <div class="car-lbl">CineLog Top 10</div>
-    <div class="scroll-row" id="poster-row"></div>
+  <div class="csec">
+    <div class="clbl">CineLog Top 10</div>
+    <div class="srow" id="poster-row"></div>
   </div>
-  <section class="bento-sec">
-    <h2 class="ts reveal">Get the complete picture.</h2>
-    <div class="bento-grid">
-      <div class="bc s3 reveal" onclick="navigate('diary')"><i class="ph-duotone ph-books"></i><h3>A diary for your cinematic life.</h3><p class="tb">Keep a beautiful, organized history of every film you've watched — with ratings and reviews.</p></div>
-      <div class="bc s3 reveal" style="transition-delay:.08s" onclick="navigate('community')"><i class="ph-duotone ph-users-three"></i><h3>Follow your people.</h3><p class="tb">Discover films through the people whose taste you trust most.</p></div>
-      <div class="bc s3 reveal" style="transition-delay:.16s" onclick="navigate('lists')"><i class="ph-duotone ph-list-dashes"></i><h3>Curate custom lists.</h3><p class="tb">Build, share, and rank your definitive film collections.</p></div>
-      <div class="bc s3 ai reveal" style="transition-delay:.24s" onclick="navigate('ai')"><i class="ph-duotone ph-sparkle" style="color:#319197"></i><h3><span class="gt">Powered by AI Insights.</span></h3><p class="tb">The Cinematic Engine analyzes your exact taste profile to surface hidden gems.</p></div>
+  <section class="bsec">
+    <h2 class="ts rev">Get the complete picture.</h2>
+    <div class="bgrid">
+      <div class="bc s3 rev" onclick="navigate('diary')"><i class="ph-duotone ph-books"></i><h3>A diary for your cinematic life.</h3><p class="tb">Keep a beautiful, organized history of every film you've watched.</p></div>
+      <div class="bc s3 rev" style="transition-delay:.07s" onclick="navigate('community')"><i class="ph-duotone ph-users-three"></i><h3>Follow your people.</h3><p class="tb">Discover films through people whose taste you trust most.</p></div>
+      <div class="bc s3 rev" style="transition-delay:.14s" onclick="navigate('lists')"><i class="ph-duotone ph-list-dashes"></i><h3>Curate custom lists.</h3><p class="tb">Build, share, and rank your definitive film collections.</p></div>
+      <div class="bc s3 aic rev" style="transition-delay:.21s" onclick="navigate('ai')"><i class="ph-duotone ph-sparkle" style="color:#319197"></i><h3><span class="gt">Powered by AI Insights.</span></h3><p class="tb">The Cinematic Engine analyzes your taste profile to surface hidden gems.</p></div>
     </div>
   </section>
-  <section class="trend-sec">
-    <h2 class="ts reveal">Trending Now</h2>
-    <div class="trend-grid">
-      <div class="ti reveal" onclick="navigate('movie&id=dune2')"><div class="ti-poster" style="background-image:url('https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg')"></div><h4>Dune: Part Two</h4><p>2024 · Villeneuve</p></div>
-      <div class="ti reveal" style="transition-delay:.08s" onclick="navigate('movie&id=oppenheimer')"><div class="ti-poster" style="background-image:url('https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg')"></div><h4>Oppenheimer</h4><p>2023 · Nolan</p></div>
-      <div class="ti reveal" style="transition-delay:.16s" onclick="navigate('movie&id=parasite')"><div class="ti-poster" style="background-image:url('https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg')"></div><h4>Parasite</h4><p>2019 · Bong Joon Ho</p></div>
-      <div class="ti reveal" style="transition-delay:.24s" onclick="navigate('movie&id=lambs')"><div class="ti-poster" style="background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg')"></div><h4>Silence of the Lambs</h4><p>1991 · Demme</p></div>
+  <section class="tsec">
+    <h2 class="ts rev">Trending Now</h2>
+    <div class="tgrid">
+      <div class="ti rev" onclick="navigate('movie&id=dune2')"><div class="tiposter" style="background-image:url('https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg')"></div><h4>Dune: Part Two</h4><p>2024 · Villeneuve</p></div>
+      <div class="ti rev" style="transition-delay:.07s" onclick="navigate('movie&id=oppenheimer')"><div class="tiposter" style="background-image:url('https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg')"></div><h4>Oppenheimer</h4><p>2023 · Nolan</p></div>
+      <div class="ti rev" style="transition-delay:.14s" onclick="navigate('movie&id=parasite')"><div class="tiposter" style="background-image:url('https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg')"></div><h4>Parasite</h4><p>2019 · Bong Joon Ho</p></div>
+      <div class="ti rev" style="transition-delay:.21s" onclick="navigate('movie&id=lambs')"><div class="tiposter" style="background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg')"></div><h4>Silence of the Lambs</h4><p>1991 · Demme</p></div>
     </div>
   </section>
 </div>
 
-<!-- DIARY / PROFILE -->
+<!-- ══ DIARY ══ -->
 <div id="view-diary" class="view">
   <div class="ph">
-    <div class="prof-hdr">
-      <div class="av-wrap">
-        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&fit=crop" class="av" id="prof-av" alt="Avatar">
-        <button class="av-edit" onclick="openM('profile-modal')"><i class="ph-bold ph-pencil-simple"></i></button>
+    <div class="profhdr">
+      <div class="avwrap">
+        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&fit=crop" class="av" id="profav" alt="Avatar">
+        <button class="avedit" onclick="openM('profile-modal')"><i class="ph-bold ph-pencil-simple"></i></button>
       </div>
       <div style="flex:1">
-        <h1 class="tp" id="prof-name">Rizly</h1>
-        <p style="color:var(--muted);margin-top:5px;font-size:14px"><i class="ph-fill ph-map-pin"></i> Bandung, Indonesia &nbsp;·&nbsp; <i class="ph-fill ph-student"></i> <span id="prof-bio">Film Student at UNPAD</span></p>
-        <div class="stats-row">
+        <h1 class="tp" id="profname" style="margin-bottom:6px">Rizly</h1>
+        <p style="color:var(--mu);font-size:13px" id="profmeta">Bandung, Indonesia &nbsp;·&nbsp; Film Student at UNPAD</p>
+        <div class="statrow">
           <div class="stat"><h5>412</h5><p>Films</p></div>
           <div class="stat"><h5>84</h5><p>This Year</p></div>
           <div class="stat"><h5>12</h5><p>Reviews</p></div>
         </div>
-        <div class="ptag" id="style-tag"><i class="ph-fill ph-sparkle"></i> The Nolan Loyalist · Psychological Voyeur</div>
+        <div class="ptag" id="styletag">✦ The Nolan Loyalist · Psychological Voyeur</div>
       </div>
-      <button class="btn btn-g btn-sm" onclick="openM('profile-modal')"><i class="ph-bold ph-pencil-simple"></i> Edit</button>
+      <button class="btn btng sm" onclick="openM('profile-modal')">Edit</button>
     </div>
   </div>
   <div class="pc">
-    <div class="sh"><h2 class="ts" style="margin-bottom:0">All-Time Favorites</h2><button class="btn btn-g btn-sm" onclick="openM('edit-fav-modal')"><i class="ph-bold ph-pencil-simple"></i> Edit</button></div>
-    <div class="fav-grid reveal">
+    <div class="sh"><h2 class="ts" style="margin-bottom:0">All-Time Favorites</h2><button class="btn btng sm" onclick="openM('edit-fav-modal')">Edit</button></div>
+    <div class="fgrid rev">
       <div class="fi" style="background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg')" onclick="navigate('movie&id=lambs')"></div>
       <div class="fi" style="background-image:url('https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg')" onclick="navigate('movie&id=interstellar')"></div>
       <div class="fi" style="background-image:url('https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg')" onclick="navigate('movie&id=oppenheimer')"></div>
       <div class="fi" style="background-image:url('https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg')" onclick="navigate('movie&id=dune2')"></div>
     </div>
-    <div class="style-card reveal" style="position:relative">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;position:relative;z-index:1">
-        <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#7c3aed;display:flex;align-items:center;gap:5px;margin-bottom:10px"><i class="ph-fill ph-magic-wand"></i> Cinematic Identity</div><h3 class="ts" style="margin-bottom:0;font-size:22px">Analyze My Style</h3></div>
-        <button class="btn btn-a btn-sm" onclick="analyzeStyle()"><i class="ph-bold ph-sparkle"></i> Run Analysis</button>
+    <div class="scard rev" style="position:relative">
+      <div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+        <div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#7c3aed;margin-bottom:9px">✦ Cinematic Identity</p><h3 class="ts" style="margin-bottom:0;font-size:21px">Analyze My Style</h3></div>
+        <button class="btn btna sm" onclick="analyzeStyle()">Run Analysis</button>
       </div>
-      <div id="style-result" style="display:none;margin-top:16px;position:relative;z-index:1"><p class="tb" style="margin-bottom:14px" id="style-desc"></p><div class="stags" id="style-tags-wrap"></div></div>
-      <div id="style-loader" style="display:none;margin-top:16px;color:var(--accent);font-size:14px;position:relative;z-index:1"><i class="ph-bold ph-spinner-gap spin"></i> Analyzing 412 films…</div>
+      <div id="style-result" style="display:none;margin-top:14px;position:relative;z-index:1"><p class="tb" style="margin-bottom:12px;font-size:14px" id="style-desc"></p><div class="stags" id="style-tags"></div></div>
+      <div id="style-loader" style="display:none;margin-top:14px;color:var(--ac);font-size:13px;position:relative;z-index:1"><i class="ph-bold ph-spinner-gap spin"></i> Analyzing your cinematic identity…</div>
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:48px;margin-bottom:0">
-      <h2 class="ts" style="margin-bottom:0">Recent Logs</h2>
-      <button class="btn btn-g btn-sm" onclick="navigate('filmlog')"><i class="ph ph-film-clapperboard"></i> View All 412</button>
-    </div>
-    <div class="diary-list">
-      <div class="dc reveal"><div class="dt" style="background-image:url('https://images.unsplash.com/photo-1514316454349-750a7fd3da3a?w=500&q=80')"></div><div><h4 style="font-size:18px;font-weight:600;font-family:var(--serif)">The Quiet Love <span style="color:var(--muted);font-weight:400;font-family:var(--sans)">(2025)</span></h4><p style="color:var(--muted);font-size:12px;margin-top:4px">Dec 4, 2025</p><div class="dstars"><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i></div><p class="tb" style="font-size:14px;margin-top:5px">Such a beautiful exploration of life and relationships.</p></div></div>
-      <div class="dc reveal"><div class="dt" style="background-image:url('https://image.tmdb.org/t/p/w500/1XnnBq4DUS2p7P7aHjB7E206QxP.jpg')"></div><div><h4 style="font-size:18px;font-weight:600;font-family:var(--serif)">Vina Sebelum 7 Hari <span style="color:var(--muted);font-weight:400;font-family:var(--sans)">(2024)</span></h4><p style="color:var(--muted);font-size:12px;margin-top:4px">Feb 6, 2026</p><div class="dstars"><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph ph-star"></i><i class="ph ph-star"></i></div><p class="tb" style="font-size:14px;margin-top:5px">For LSF internship analysis. Highly intense.</p></div></div>
+    <div class="sh" style="margin-top:44px"><h2 class="ts" style="margin-bottom:0">Recent Logs</h2><button class="btn btng sm" onclick="navigate('filmlog')">View All 412</button></div>
+    <div class="dlist">
+      <div class="dc rev"><div class="dt" style="background-image:url('https://images.unsplash.com/photo-1514316454349-750a7fd3da3a?w=500&q=80')"></div><div><h4 style="font-size:17px;font-weight:600;font-family:var(--sr)">The Quiet Love <span style="color:var(--mu);font-weight:400;font-family:var(--ss);font-size:14px">(2025)</span></h4><p style="color:var(--mu);font-size:11px;margin-top:3px">Dec 4, 2025</p><div class="dstr">★★★★★</div><p class="tb" style="font-size:13px;margin-top:4px">Such a beautiful exploration of life and relationships.</p></div></div>
+      <div class="dc rev"><div class="dt" style="background-image:url('https://image.tmdb.org/t/p/w500/1XnnBq4DUS2p7P7aHjB7E206QxP.jpg')"></div><div><h4 style="font-size:17px;font-weight:600;font-family:var(--sr)">Vina Sebelum 7 Hari <span style="color:var(--mu);font-weight:400;font-family:var(--ss);font-size:14px">(2024)</span></h4><p style="color:var(--mu);font-size:11px;margin-top:3px">Feb 6, 2026</p><div class="dstr">★★★</div><p class="tb" style="font-size:13px;margin-top:4px">For LSF internship analysis. Highly intense.</p></div></div>
     </div>
   </div>
 </div>
 
-<!-- FILM LOG -->
+<!-- ══ FILM LOG ══ -->
 <div id="view-filmlog" class="view">
-  <div class="ph"><h1 class="tp">My Film Log</h1><p class="tb" style="margin-top:6px">All 412 films logged — sorted, filtered, yours.</p></div>
+  <div class="ph"><h1 class="tp">My Film Log</h1><p class="tb" style="margin-top:5px">All 412 films — sorted &amp; filtered.</p></div>
   <div class="pc">
-    <div class="log-filters" id="log-filters">
-      <button class="filter-btn active" onclick="filterLog('all',this)">All Time</button>
-      <button class="filter-btn" onclick="filterLog('year',this)">This Year</button>
-      <button class="filter-btn" onclick="filterLog('month',this)">This Month</button>
-      <button class="filter-btn" onclick="filterLog('week',this)">This Week</button>
-      <button class="filter-btn" style="margin-left:auto" onclick="filterLog('rating',this)"><i class="ph ph-star"></i> By Rating</button>
-      <button class="filter-btn" onclick="filterLog('recent',this)"><i class="ph ph-clock"></i> Recent First</button>
+    <div class="lfil" id="lfil">
+      <button class="fb2 active" onclick="filterLog('all',this)">All Time</button>
+      <button class="fb2" onclick="filterLog('year',this)">This Year</button>
+      <button class="fb2" onclick="filterLog('month',this)">This Month</button>
+      <button class="fb2" onclick="filterLog('week',this)">This Week</button>
+      <button class="fb2" style="margin-left:auto" onclick="filterLog('rating',this)">By Rating</button>
+      <button class="fb2" onclick="filterLog('recent',this)">Recent First</button>
     </div>
-    <div class="log-grid" id="log-grid"></div>
+    <div class="lgrid" id="lgrid"></div>
   </div>
 </div>
 
-<!-- COMMUNITY -->
+<!-- ══ COMMUNITY ══ -->
 <div id="view-community" class="view">
-  <div class="ph"><h1 class="tp">Community</h1><p class="tb" style="margin-top:6px">What the world is watching right now.</p></div>
+  <div class="ph"><h1 class="tp">Community</h1><p class="tb" style="margin-top:5px">What the world is watching right now.</p></div>
   <div class="pc">
-    <div class="com-grid">
-      <div class="com-panel">
-        <h3 class="ts" style="font-size:18px;margin-bottom:16px"><i class="ph-fill ph-users" style="color:var(--accent);margin-right:6px"></i>Friends</h3>
-        <div class="friend-item"><div class="friend-av" style="background-image:url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80')"></div><div class="friend-info"><h4>Sarah</h4><p>Just logged Dune: Part Two ★★★★½</p></div></div>
-        <div class="friend-item"><div class="friend-av" style="background-image:url('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80')"></div><div class="friend-info"><h4>Diki</h4><p>Watching The Dark Knight now</p></div></div>
-        <div class="friend-item"><div class="friend-av" style="background-image:url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80')"></div><div class="friend-info"><h4>Maya</h4><p>Added Parasite to Watchlist</p></div></div>
-        <div class="friend-item"><div class="friend-av" style="background-image:url('https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&q=80')"></div><div class="friend-info"><h4>Fariz</h4><p>Reviewed Oppenheimer ★★★★</p></div></div>
+    <div class="cgrid">
+      <div class="cpanel">
+        <h3 class="ts" style="font-size:17px;margin-bottom:14px">Friends</h3>
+        <div class="fri"><div class="fav3" style="background-image:url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80')"></div><div class="fri-info"><h4>Sarah</h4><p>Logged Dune: Part Two — ★★★★½</p></div></div>
+        <div class="fri"><div class="fav3" style="background-image:url('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80')"></div><div class="fri-info"><h4>Diki</h4><p>Watching The Dark Knight now</p></div></div>
+        <div class="fri"><div class="fav3" style="background-image:url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80')"></div><div class="fri-info"><h4>Maya</h4><p>Added Parasite to Watchlist</p></div></div>
+        <div class="fri"><div class="fav3" style="background-image:url('https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&q=80')"></div><div class="fri-info"><h4>Fariz</h4><p>Reviewed Oppenheimer — ★★★★</p></div></div>
       </div>
-      <div class="com-panel">
-        <h3 class="ts" style="font-size:18px;margin-bottom:16px"><i class="ph-fill ph-fire" style="color:#ff7a18;margin-right:6px"></i>Global Trending</h3>
-        <div class="trending-pill"><span class="tp-rank">1</span><div class="tp-info"><h4>Dune: Part Two</h4><p>Denis Villeneuve · 2024</p></div><span class="tp-count">2.4K logs</span></div>
-        <div class="trending-pill"><span class="tp-rank">2</span><div class="tp-info"><h4>Oppenheimer</h4><p>Christopher Nolan · 2023</p></div><span class="tp-count">1.9K logs</span></div>
-        <div class="trending-pill"><span class="tp-rank">3</span><div class="tp-info"><h4>Parasite</h4><p>Bong Joon Ho · 2019</p></div><span class="tp-count">1.7K logs</span></div>
-        <div class="trending-pill"><span class="tp-rank">4</span><div class="tp-info"><h4>The Dark Knight</h4><p>Christopher Nolan · 2008</p></div><span class="tp-count">1.5K logs</span></div>
-        <div class="trending-pill"><span class="tp-rank">5</span><div class="tp-info"><h4>Interstellar</h4><p>Christopher Nolan · 2014</p></div><span class="tp-count">1.2K logs</span></div>
+      <div class="cpanel">
+        <h3 class="ts" style="font-size:17px;margin-bottom:14px">Global Trending</h3>
+        <div class="tpill"><span class="trnk">1</span><div class="trinfo"><h4>Dune: Part Two</h4><p>Villeneuve · 2024</p></div><span class="trcnt">2.4K</span></div>
+        <div class="tpill"><span class="trnk">2</span><div class="trinfo"><h4>Oppenheimer</h4><p>Nolan · 2023</p></div><span class="trcnt">1.9K</span></div>
+        <div class="tpill"><span class="trnk">3</span><div class="trinfo"><h4>Parasite</h4><p>Bong Joon Ho · 2019</p></div><span class="trcnt">1.7K</span></div>
+        <div class="tpill"><span class="trnk">4</span><div class="trinfo"><h4>The Dark Knight</h4><p>Nolan · 2008</p></div><span class="trcnt">1.5K</span></div>
+        <div class="tpill"><span class="trnk">5</span><div class="trinfo"><h4>Interstellar</h4><p>Nolan · 2014</p></div><span class="trcnt">1.2K</span></div>
       </div>
     </div>
     <h2 class="ts">Latest Reviews</h2>
     <div class="feed">
-      <div class="fc reveal" onclick="navigate('review&id=0')"><div class="fav" style="background-image:url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80')"></div><div class="fb"><div class="fm"><strong>Sarah</strong> watched <strong>Dune: Part Two</strong></div><div class="fst"><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph ph-star-half"></i></div><p class="tb" style="font-size:14px">Denis Villeneuve does it again. The IMAX sound design had my seat shaking. Lisan al Gaib!</p><div style="margin-top:8px;font-size:12px;color:var(--muted)">42 likes · 8 comments <span style="color:var(--accent)">Read more →</span></div></div><div class="fth" style="background-image:url('https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg')"></div></div>
-      <div class="fc reveal" onclick="navigate('review&id=1')"><div class="fav" style="background-image:url('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80')"></div><div class="fb"><div class="fm"><strong>Diki</strong> watched <strong>The Silence of the Lambs</strong></div><div class="fst"><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i></div><p class="tb" style="font-size:14px">A masterclass in tension. Hopkins is terrifying with just a stare.</p><div style="margin-top:8px;font-size:12px;color:var(--muted)">78 likes · 14 comments <span style="color:var(--accent)">Read more →</span></div></div><div class="fth" style="background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg')"></div></div>
-      <div class="fc reveal" onclick="navigate('review&id=2')"><div class="fav" style="background-image:url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80')"></div><div class="fb"><div class="fm"><strong>Maya</strong> watched <strong>Parasite</strong></div><div class="fst"><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i></div><p class="tb" style="font-size:14px">Mind-blowing. The genre shifts are pure genius.</p><div style="margin-top:8px;font-size:12px;color:var(--muted)">121 likes · 23 comments <span style="color:var(--accent)">Read more →</span></div></div><div class="fth" style="background-image:url('https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg')"></div></div>
+      <div class="fcard rev" onclick="navigate('review&id=0')"><div class="fav2" style="background-image:url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80')"></div><div class="fb"><div class="fm"><strong>Sarah</strong> watched <strong>Dune: Part Two</strong></div><div class="fst">★★★★½</div><p class="tb" style="font-size:13px">Denis Villeneuve does it again. The IMAX sound design had my seat shaking.</p><div style="margin-top:7px;font-size:11px;color:var(--mu)">42 likes · 8 comments <span style="color:var(--ac)">Read more →</span></div></div><div class="fth" style="background-image:url('https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg')"></div></div>
+      <div class="fcard rev" onclick="navigate('review&id=1')"><div class="fav2" style="background-image:url('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80')"></div><div class="fb"><div class="fm"><strong>Diki</strong> watched <strong>The Silence of the Lambs</strong></div><div class="fst">★★★★★</div><p class="tb" style="font-size:13px">A masterclass in tension. Hopkins is terrifying with just a stare.</p><div style="margin-top:7px;font-size:11px;color:var(--mu)">78 likes · 14 comments <span style="color:var(--ac)">Read more →</span></div></div><div class="fth" style="background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg')"></div></div>
+      <div class="fcard rev" onclick="navigate('review&id=2')"><div class="fav2" style="background-image:url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80')"></div><div class="fb"><div class="fm"><strong>Maya</strong> watched <strong>Parasite</strong></div><div class="fst">★★★★★</div><p class="tb" style="font-size:13px">Mind-blowing. The genre shifts without warning are pure genius.</p><div style="margin-top:7px;font-size:11px;color:var(--mu)">121 likes · 23 comments <span style="color:var(--ac)">Read more →</span></div></div><div class="fth" style="background-image:url('https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg')"></div></div>
     </div>
   </div>
 </div>
 
-<!-- REVIEW DETAIL -->
+<!-- ══ REVIEW DETAIL ══ -->
 <div id="view-review" class="view">
   <div class="ph">
-    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
-      <div class="fav" id="rv-av" style="width:54px;height:54px;border-radius:27px;background-size:cover;background-position:center"></div>
-      <div><h1 class="tp" id="rv-title" style="font-size:26px"></h1><p style="color:var(--muted);margin-top:3px" id="rv-sub"></p></div>
+    <div style="display:flex;gap:13px;align-items:center;flex-wrap:wrap">
+      <div class="fav2" id="rvav" style="width:52px;height:52px;border-radius:26px;background-size:cover;background-position:center"></div>
+      <div><h1 class="tp" id="rvtitle" style="font-size:24px"></h1><p style="color:var(--mu);margin-top:3px;font-size:13px" id="rvsub"></p></div>
     </div>
   </div>
-  <div class="pc" style="max-width:720px">
-    <div class="rv-detail">
-      <div style="display:flex;gap:14px;margin-bottom:14px;align-items:flex-start">
-        <div class="fth" id="rv-poster"></div>
-        <div><div class="fst" id="rv-stars" style="font-size:19px;margin-bottom:8px"></div><p id="rv-text" class="tb selectable" style="font-size:15px;line-height:1.7;user-select:text"></p></div>
+  <div class="pc" style="max-width:700px">
+    <div class="rvd">
+      <div style="display:flex;gap:13px;margin-bottom:13px;align-items:flex-start">
+        <div class="fth" id="rvposter"></div>
+        <div><div class="fst" id="rvstars" style="font-size:18px;margin-bottom:7px"></div><p id="rvtext" class="tb sel" style="font-size:14px;line-height:1.7"></p></div>
       </div>
-      <div class="rv-acts">
-        <button class="act-btn" id="like-btn" onclick="toggleLike()"><i class="ph-bold ph-heart"></i> <span id="like-count">42</span></button>
-        <button class="act-btn" onclick="document.getElementById('comment-input').focus()"><i class="ph-bold ph-chat-circle"></i> Comment</button>
-        <button class="act-btn" id="rv-film-btn"><i class="ph-bold ph-film-strip"></i> View Film</button>
+      <div class="rvacts">
+        <button class="abt" id="likebtn" onclick="toggleLike()"><i class="ph-bold ph-heart"></i> <span id="likecnt">42</span></button>
+        <button class="abt" onclick="document.getElementById('cmtinp').focus()"><i class="ph-bold ph-chat-circle"></i> Comment</button>
+        <button class="abt" id="rvfilmbtn"><i class="ph-bold ph-film-strip"></i> View Film</button>
       </div>
     </div>
-    <h3 style="font-family:var(--serif);font-size:18px;margin-bottom:14px">Comments</h3>
-    <div id="comments-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px"></div>
-    <textarea class="cmb" id="comment-input" placeholder="Add a comment…"></textarea>
-    <button class="btn btn-a btn-sm" style="margin-top:8px" onclick="postComment()"><i class="ph-bold ph-paper-plane-tilt"></i> Post</button>
+    <h3 style="font-family:var(--sr);font-size:17px;margin-bottom:12px">Comments</h3>
+    <div id="cmtlist" style="display:flex;flex-direction:column;gap:9px;margin-bottom:16px"></div>
+    <textarea class="cmb" id="cmtinp" placeholder="Add a comment…"></textarea>
+    <button class="btn btna sm" style="margin-top:7px" onclick="postComment()"><i class="ph-bold ph-paper-plane-tilt"></i> Post</button>
   </div>
 </div>
 
-<!-- LISTS -->
+<!-- ══ LISTS ══ -->
 <div id="view-lists" class="view">
-  <div class="ph"><div class="sh" style="margin-bottom:0"><h1 class="tp">Lists</h1><button class="btn btn-a btn-sm" onclick="openM('new-list-modal')"><i class="ph-bold ph-plus"></i> New List</button></div><p class="tb" style="margin-top:6px">Your curated film collections.</p></div>
+  <div class="ph"><div class="sh" style="margin-bottom:0"><h1 class="tp">Lists</h1><button class="btn btna sm" onclick="openM('new-list-modal')"><i class="ph-bold ph-plus"></i> New List</button></div><p class="tb" style="margin-top:5px">Your curated film collections.</p></div>
   <div class="pc">
-    <div class="lists-grid">
-      <div class="lcard reveal" onclick="navigate('lists-detail&id=masterpieces')"><div class="lcov"><div style="background-image:url('https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg')"></div><div style="background-image:url('https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg')"></div><div style="background-image:url('https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg')"></div><div style="background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg')"></div></div><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h3>Cinematic Masterpieces</h3><p class="tb" style="font-size:13px">24 Films · Rizly</p></div><button class="btn btn-g btn-sm" style="padding:6px 10px;font-size:11px" onclick="event.stopPropagation();openM('edit-list-modal')"><i class="ph-bold ph-pencil-simple"></i></button></div></div>
-      <div class="lcard reveal" style="transition-delay:.08s" onclick="navigate('lists-detail&id=lsf')"><div class="lcov"><div style="background-image:url('https://image.tmdb.org/t/p/w500/1XnnBq4DUS2p7P7aHjB7E206QxP.jpg')"></div><div style="background:#1a1a2e"></div><div style="background:#16213e"></div><div style="background:#0f3460"></div></div><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h3>LSF Internship Watchlist</h3><p class="tb" style="font-size:13px">8 Films · Rizly</p></div><button class="btn btn-g btn-sm" style="padding:6px 10px;font-size:11px" onclick="event.stopPropagation();openM('edit-list-modal')"><i class="ph-bold ph-pencil-simple"></i></button></div></div>
-      <div class="lcard reveal" style="transition-delay:.16s" onclick="navigate('lists-detail&id=palme')"><div class="lcov"><div style="background-image:url('https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg')"></div><div style="background-image:url('https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg')"></div><div style="background:#111"></div><div style="background:#1a1a1a"></div></div><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h3>Palme d'Or Winners</h3><p class="tb" style="font-size:13px">12 Films · Community</p></div><button class="btn btn-g btn-sm" style="padding:6px 10px;font-size:11px" onclick="event.stopPropagation();openM('edit-list-modal')"><i class="ph-bold ph-pencil-simple"></i></button></div></div>
-      <div onclick="openM('new-list-modal')"><div class="new-list-btn"><i class="ph-bold ph-plus-circle" style="font-size:28px"></i><span>Create New List</span></div></div>
+    <div class="lgrd">
+      <div class="lcard rev" onclick="navigate('lists-detail&id=masterpieces')"><div class="lcov"><div style="background-image:url('https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg')"></div><div style="background-image:url('https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg')"></div><div style="background-image:url('https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg')"></div><div style="background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg')"></div></div><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h3>Cinematic Masterpieces</h3><p class="tb" style="font-size:12px">24 Films · Rizly</p></div><button class="btn btng sm" style="padding:5px 9px;font-size:11px" onclick="event.stopPropagation();openM('edit-list-modal')">✎</button></div></div>
+      <div class="lcard rev" style="transition-delay:.07s" onclick="navigate('lists-detail&id=lsf')"><div class="lcov"><div style="background-image:url('https://image.tmdb.org/t/p/w500/1XnnBq4DUS2p7P7aHjB7E206QxP.jpg')"></div><div style="background:#1a1a2e"></div><div style="background:#16213e"></div><div style="background:#0f3460"></div></div><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h3>LSF Internship Watchlist</h3><p class="tb" style="font-size:12px">8 Films · Rizly</p></div><button class="btn btng sm" style="padding:5px 9px;font-size:11px" onclick="event.stopPropagation();openM('edit-list-modal')">✎</button></div></div>
+      <div class="lcard rev" style="transition-delay:.14s" onclick="navigate('lists-detail&id=palme')"><div class="lcov"><div style="background-image:url('https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg')"></div><div style="background-image:url('https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg')"></div><div style="background:#111"></div><div style="background:#1a1a1a"></div></div><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h3>Palme d'Or Winners</h3><p class="tb" style="font-size:12px">12 Films · Community</p></div><button class="btn btng sm" style="padding:5px 9px;font-size:11px" onclick="event.stopPropagation();openM('edit-list-modal')">✎</button></div></div>
+      <div onclick="openM('new-list-modal')"><div class="nlbtn">+ Create New List</div></div>
     </div>
   </div>
 </div>
 
-<!-- LIST DETAIL -->
+<!-- ══ LIST DETAIL ══ -->
 <div id="view-lists-detail" class="view">
-  <div class="ph"><div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap"><div class="ld-cover" id="ld-cover"></div><div style="flex:1"><h1 class="tp" id="ld-title"></h1><p class="tb" style="margin-top:5px" id="ld-meta"></p><p class="tb" style="margin-top:10px" id="ld-desc"></p><div style="display:flex;gap:8px;margin-top:18px"><button class="btn btn-a btn-sm" onclick="openM('new-list-modal')"><i class="ph-bold ph-plus"></i> Add Films</button><button class="btn btn-g btn-sm" onclick="openM('edit-list-modal')"><i class="ph-bold ph-pencil-simple"></i> Edit</button></div></div></div></div>
-  <div class="pc"><h2 class="ts">Films</h2><div class="mosaic" id="ld-grid"></div></div>
+  <div class="ph"><div style="display:flex;align-items:flex-start;gap:22px;flex-wrap:wrap"><div class="ldcov" id="ldcov"></div><div style="flex:1"><h1 class="tp" id="ldtitle"></h1><p class="tb" style="margin-top:5px;font-size:13px" id="ldmeta"></p><p class="tb" style="margin-top:9px;font-size:14px" id="lddesc"></p><div style="display:flex;gap:7px;margin-top:16px"><button class="btn btna sm" onclick="openM('new-list-modal')"><i class="ph-bold ph-plus"></i> Add Films</button><button class="btn btng sm" onclick="openM('edit-list-modal')">Edit List</button></div></div></div></div>
+  <div class="pc"><h2 class="ts">Films</h2><div class="mosaic" id="ldgrid"></div></div>
 </div>
 
-<!-- AI ENGINE -->
+<!-- ══ AI ENGINE ══ -->
 <div id="view-ai" class="view">
-  <div class="ph" style="text-align:center;border:none"><h1 class="tp gt">Cinematic Engine</h1><p class="tb" style="margin-top:6px">Advanced AI analysis of your diary to surface your next obsession.</p></div>
-  <div class="pc ai-wrap" id="ai-wrap">
-    <div class="ai-orb" id="ai-orb"><i class="ph-duotone ph-sparkle"></i></div>
-    <button class="ai-glow-btn" id="ai-btn" onclick="runAI()"><i class="ph-bold ph-magic-wand"></i> Analyze My Taste</button>
-    <div id="ai-loader"><i class="ph-bold ph-spinner-gap spin" style="margin-right:6px"></i> Scanning 412 films and 12 reviews…</div>
+  <div class="ph" style="text-align:center;border:none"><h1 class="tp gt">Cinematic Engine</h1><p class="tb" style="margin-top:5px">AI analysis of your diary to surface your next obsession.</p></div>
+  <div class="pc aiwrap" id="aiwrap">
+    <div class="aiorb" id="aiorb"><i class="ph-duotone ph-sparkle"></i></div>
+    <button class="aigbtn" id="aibtn" onclick="runAI()"><i class="ph-bold ph-magic-wand"></i> Analyze My Taste</button>
+    <div id="ai-loader"><i class="ph-bold ph-spinner-gap spin" style="margin-right:5px"></i> Scanning 412 films…</div>
     <div id="ai-result">
-      <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,122,24,.08),rgba(49,145,151,.08));border-radius:26px;pointer-events:none"></div>
-      <div class="air-inner">
-        <img src="https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg" alt="The Dark Knight">
-        <div><div class="mbadge">98% Match</div><h2 style="font-family:var(--serif);font-size:28px;font-weight:700;margin-bottom:8px">The Dark Knight</h2><p class="tb" style="font-size:14px;margin-bottom:18px">Because you rated <strong>Oppenheimer</strong> and <strong>Interstellar</strong> 4.5+ stars, you love Nolan's practical-effects-driven, philosophically heavy epics.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p btn-sm" onclick="navigate('movie&id=dark-knight')">View Details</button><button class="btn btn-g btn-sm" onclick="openLogModal()"><i class="ph-bold ph-plus"></i> Log Film</button></div></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,122,24,.08),rgba(49,145,151,.08));border-radius:24px;pointer-events:none"></div>
+      <div class="airinn">
+        <img src="https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg" alt="Rec">
+        <div><div class="mbadge">98% Match</div><h2 style="font-family:var(--sr);font-size:26px;font-weight:700;margin-bottom:7px" id="ai-rec-title">The Dark Knight</h2><p class="tb" style="font-size:13px;margin-bottom:16px" id="ai-rec-text"></p><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btnp sm" onclick="navigate('movie&id=dark-knight')">View Details</button><button class="btn btng sm" onclick="openLogModal()"><i class="ph-bold ph-plus"></i> Log Film</button></div></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- MOVIE DETAIL -->
+<!-- ══ MOVIE DETAIL ══ -->
 <div id="view-movie" class="view">
-  <div class="md-wrap">
-    <div class="md-art" id="md-art"></div>
-    <div class="md-inner">
-      <div class="md-flex">
-        <div class="md-left">
-          <img src="" id="md-poster" class="md-poster" alt="Poster">
-          <button class="btn btn-p" style="justify-content:center" onclick="openLogModal()"><i class="ph-bold ph-check-circle"></i> Log / Review</button>
-          <button class="btn btn-g" style="justify-content:center"><i class="ph-bold ph-bookmark-simple"></i> Watchlist</button>
-          <!-- SOUNDTRACK PLAYER -->
-          <div class="snd-player" id="snd-player">
-            <div class="snd-info"><div class="snd-title" id="snd-title">Official Soundtrack</div><div class="snd-sub" id="snd-sub">Loading…</div></div>
-            <div class="snd-ctls">
-              <button class="snd-btn" id="snd-mute-btn" onclick="sndToggleMute()" title="Mute"><i class="ph-bold ph-speaker-slash" id="snd-mute-icon"></i></button>
-              <button class="snd-btn" id="snd-play-btn" onclick="sndTogglePlay()" title="Play"><i class="ph-bold ph-play" id="snd-play-icon"></i></button>
+  <div class="mdwrap">
+    <div class="mdart" id="mdart"></div>
+    <div class="mdinn">
+      <div class="mdflex">
+        <div class="mdleft">
+          <img src="" id="mdposter" class="mdpost" alt="Poster">
+          <button class="btn btnp" style="justify-content:center" onclick="openLogModal()"><i class="ph-bold ph-check-circle"></i> Log / Review</button>
+          <button class="btn btng" style="justify-content:center"><i class="ph-bold ph-bookmark-simple"></i> Watchlist</button>
+          <div class="sndp" id="sndp">
+            <div class="sndinf"><div class="sndt" id="sndt">Soundtrack</div><div class="snds" id="snds">–</div></div>
+            <div class="sndctls">
+              <button class="sndbtn" onclick="sndMute()"><i class="ph-bold ph-speaker-slash" id="sndmico"></i></button>
+              <button class="sndbtn" id="sndpbtn" onclick="sndPlay()"><i class="ph-bold ph-play" id="sndpico"></i></button>
             </div>
           </div>
-          <!-- STILLS -->
-          <div class="stills-sec">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px">Stills &amp; Behind the Scenes</div>
-            <div class="stills-grid" id="stills-grid"></div>
+          <div style="margin-top:10px">
+            <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mu);margin-bottom:7px">Stills &amp; BTS</p>
+            <div class="stgrid" id="stgrid"></div>
           </div>
         </div>
-        <div class="md-info">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:7px" id="md-logline"></div>
-          <h1 class="th selectable" style="font-size:clamp(30px,5vw,52px)" id="md-title"></h1>
-          <div class="md-meta"><span id="md-year"></span><div class="md-dot"></div><span id="md-dir"></span><div class="md-dot"></div><span><i class="ph-fill ph-star" style="color:var(--star);position:relative;top:2px"></i> <span id="md-rating"></span>/5</span></div>
-          <div class="rrow" id="md-ext"></div>
-          <p class="tb selectable" style="font-size:16px;line-height:1.7;max-width:680px;user-select:text" id="md-synopsis"></p>
+        <div class="mdinfo">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mu);margin-bottom:6px" id="mdlogline"></div>
+          <h1 class="th sel" style="font-size:clamp(28px,4.5vw,50px)" id="mdtitle"></h1>
+          <div class="mdmeta"><span id="mdyear"></span><div class="mddot"></div><span id="mddir"></span><div class="mddot"></div><span>★ <span id="mdrating"></span>/5</span></div>
+          <div class="rrow" id="mdext"></div>
+          <p class="tb sel" style="font-size:15px;line-height:1.7;max-width:660px" id="mdsynopsis"></p>
           <div class="sdiv"></div>
-          <h3 style="font-family:var(--serif);font-size:19px;margin-bottom:14px">From the cast &amp; critics</h3>
-          <div id="md-quotes"></div>
+          <h3 style="font-family:var(--sr);font-size:18px;margin-bottom:12px">From the cast &amp; critics</h3>
+          <div id="mdquotes"></div>
           <div class="sdiv"></div>
-          <div class="why-card"><div class="why-lbl"><i class="ph-fill ph-sparkle"></i> Why you'll love this</div><p class="tb" style="font-size:14px" id="md-why"></p></div>
-          <div class="ff-card"><div class="ff-lbl"><i class="ph-fill ph-star-four"></i> Fun Fact</div><p id="ff-text" style="font-size:14px;line-height:1.65;color:var(--text)"></p><button class="btn btn-g btn-sm" style="margin-top:12px" onclick="nextFF()"><i class="ph-bold ph-arrow-clockwise"></i> Next fact</button></div>
+          <div class="whycard"><div class="whylbl">✦ Why you'll love this</div><p class="tb" style="font-size:13px" id="mdwhy"></p></div>
+          <div class="ffcard"><div class="fflbl">★ Fun Fact</div><p id="fftext" style="font-size:13px;line-height:1.65;color:var(--text)"></p><button class="btn btng sm" style="margin-top:11px" onclick="nextFF()"><i class="ph-bold ph-arrow-clockwise"></i> Next</button></div>
         </div>
       </div>
     </div>
@@ -584,148 +598,140 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
 </div><!-- #app -->
 
 <!-- MODALS -->
-<div id="log-modal" class="moverlay" onclick="if(event.target===this)closeM('log-modal')">
+<div id="log-modal" class="mov" onclick="if(event.target===this)closeM('log-modal')">
   <div class="mcard"><div class="mhdr"><h2>Log a Film</h2><button class="xbtn" onclick="closeM('log-modal')"><i class="ph-bold ph-x"></i></button></div>
-  <h3 style="font-family:var(--serif);font-size:24px;margin-bottom:18px" id="log-title">Movie</h3>
-  <div class="frow"><label>Rating</label><div class="star-row" id="log-stars"><i class="ph-fill ph-star" data-v="1"></i><i class="ph-fill ph-star" data-v="2"></i><i class="ph-fill ph-star" data-v="3"></i><i class="ph-fill ph-star" data-v="4"></i><i class="ph-fill ph-star" data-v="5"></i></div></div>
+  <h3 style="font-family:var(--sr);font-size:22px;margin-bottom:16px" id="logtitle">Movie</h3>
+  <div class="frow"><label>Rating</label><div class="starrow" id="logstars"><i class="ph-fill ph-star" data-v="1"></i><i class="ph-fill ph-star" data-v="2"></i><i class="ph-fill ph-star" data-v="3"></i><i class="ph-fill ph-star" data-v="4"></i><i class="ph-fill ph-star" data-v="5"></i></div></div>
   <div class="frow"><label>Date Watched</label><input class="finp" type="date" value="2026-03-05"></div>
   <div class="frow"><label>Review</label><textarea class="finp" placeholder="Your thoughts…"></textarea></div>
-  <button class="btn btn-p" style="width:100%;justify-content:center" onclick="closeM('log-modal')"><i class="ph-bold ph-check"></i> Save to Diary</button></div>
+  <button class="btn btnp" style="width:100%;justify-content:center" onclick="closeM('log-modal')"><i class="ph-bold ph-check"></i> Save to Diary</button></div>
 </div>
-
-<div id="profile-modal" class="moverlay" onclick="if(event.target===this)closeM('profile-modal')">
+<div id="profile-modal" class="mov" onclick="if(event.target===this)closeM('profile-modal')">
   <div class="mcard"><div class="mhdr"><h2>Edit Profile</h2><button class="xbtn" onclick="closeM('profile-modal')"><i class="ph-bold ph-x"></i></button></div>
-  <div class="frow"><label>Name</label><input class="finp" id="edit-name" value="Rizly"></div>
-  <div class="frow"><label>Bio</label><input class="finp" id="edit-bio" value="Film Student at UNPAD"></div>
-  <div class="frow"><label>Location</label><input class="finp" value="Bandung, Indonesia"></div>
-  <button class="btn btn-p" style="width:100%;justify-content:center" onclick="saveProfile()"><i class="ph-bold ph-check"></i> Save</button></div>
+  <div class="frow"><label>Name</label><input class="finp" id="editname" value="Rizly"></div>
+  <div class="frow"><label>Bio</label><input class="finp" id="editbio" value="Film Student at UNPAD"></div>
+  <div class="frow"><label>Location</label><input class="finp" id="editloc" value="Bandung, Indonesia"></div>
+  <button class="btn btnp" style="width:100%;justify-content:center" onclick="saveProfile()"><i class="ph-bold ph-check"></i> Save</button></div>
 </div>
-
-<div id="edit-fav-modal" class="moverlay" onclick="if(event.target===this)closeM('edit-fav-modal')">
+<div id="edit-fav-modal" class="mov" onclick="if(event.target===this)closeM('edit-fav-modal')">
   <div class="mcard"><div class="mhdr"><h2>Edit Favorites</h2><button class="xbtn" onclick="closeM('edit-fav-modal')"><i class="ph-bold ph-x"></i></button></div>
-  <p class="tb" style="margin-bottom:16px">Select up to 4 all-time favorites.</p>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px">
-    <div style="aspect-ratio:2/3;border-radius:9px;background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg');background-size:cover;border:2px solid var(--accent)"></div>
-    <div style="aspect-ratio:2/3;border-radius:9px;background-image:url('https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg');background-size:cover;border:2px solid var(--accent)"></div>
-    <div style="aspect-ratio:2/3;border-radius:9px;background-image:url('https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg');background-size:cover;border:2px solid var(--accent)"></div>
+  <p class="tb" style="margin-bottom:14px;font-size:13px">Select up to 4 all-time favorites.</p>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:16px">
+    <div style="aspect-ratio:2/3;border-radius:9px;background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg');background-size:cover;border:2px solid var(--ac)"></div>
+    <div style="aspect-ratio:2/3;border-radius:9px;background-image:url('https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg');background-size:cover;border:2px solid var(--ac)"></div>
+    <div style="aspect-ratio:2/3;border-radius:9px;background-image:url('https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg');background-size:cover;border:2px solid var(--ac)"></div>
     <div style="aspect-ratio:2/3;border-radius:9px;background-image:url('https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg');background-size:cover;border:2px solid transparent;opacity:.5"></div>
   </div>
-  <button class="btn btn-p" style="width:100%;justify-content:center" onclick="closeM('edit-fav-modal')"><i class="ph-bold ph-check"></i> Save Favorites</button></div>
+  <button class="btn btnp" style="width:100%;justify-content:center" onclick="closeM('edit-fav-modal')">Save</button></div>
 </div>
-
-<div id="new-list-modal" class="moverlay" onclick="if(event.target===this)closeM('new-list-modal')">
+<div id="new-list-modal" class="mov" onclick="if(event.target===this)closeM('new-list-modal')">
   <div class="mcard"><div class="mhdr"><h2>Create List</h2><button class="xbtn" onclick="closeM('new-list-modal')"><i class="ph-bold ph-x"></i></button></div>
-  <div class="frow"><label>List Name</label><input class="finp" placeholder="e.g. Best Sci-Fi of the Decade"></div>
+  <div class="frow"><label>Name</label><input class="finp" placeholder="e.g. Best Sci-Fi of the Decade"></div>
   <div class="frow"><label>Description</label><textarea class="finp" placeholder="What's this list about?"></textarea></div>
   <div class="frow"><label>Visibility</label><select class="finp"><option>Public</option><option>Private</option></select></div>
-  <button class="btn btn-p" style="width:100%;justify-content:center" onclick="closeM('new-list-modal')"><i class="ph-bold ph-check"></i> Create</button></div>
+  <button class="btn btnp" style="width:100%;justify-content:center" onclick="closeM('new-list-modal')">Create</button></div>
 </div>
-
-<div id="edit-list-modal" class="moverlay" onclick="if(event.target===this)closeM('edit-list-modal')">
+<div id="edit-list-modal" class="mov" onclick="if(event.target===this)closeM('edit-list-modal')">
   <div class="mcard"><div class="mhdr"><h2>Edit List</h2><button class="xbtn" onclick="closeM('edit-list-modal')"><i class="ph-bold ph-x"></i></button></div>
   <div class="frow"><label>Name</label><input class="finp" value="Cinematic Masterpieces"></div>
   <div class="frow"><label>Description</label><textarea class="finp">A collection of films that define the art of cinema.</textarea></div>
-  <div style="display:flex;gap:8px">
-    <button class="btn btn-p" style="flex:1;justify-content:center" onclick="closeM('edit-list-modal')"><i class="ph-bold ph-check"></i> Save</button>
-    <button class="btn btn-g" style="color:#ef4444;border-color:rgba(239,68,68,.3)"><i class="ph-bold ph-trash"></i></button>
-  </div></div>
+  <div style="display:flex;gap:7px"><button class="btn btnp" style="flex:1;justify-content:center" onclick="closeM('edit-list-modal')">Save</button><button class="btn btng" style="color:#ef4444;border-color:rgba(239,68,68,.25)">Delete</button></div></div>
 </div>
 
 <script>
 // ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+const TMDB = '849b72ab31fb69f120ef8c5df5c5f7d0';
+const TMDB_IMG = 'https://image.tmdb.org/t/p/';
+
+// ══════════════════════════════════════════
 // DATA
 // ══════════════════════════════════════════
 const MOVIES = [
-  {id:'quiet-love',title:'The Quiet Love',year:'2025',director:'Independent',rating:'4.2',
+  {id:'quiet-love',title:'The Quiet Love',year:'2025',director:'Independent',rating:'4.2',tmdbId:null,
    logline:'Two strangers find solace in the silence between words.',
-   synopsis:'Set in a rain-soaked Indonesian city, The Quiet Love follows Dira, a grieving composer, and Sena, a wandering photographer, as they orbit each other across one rainy season. A debut film of astonishing restraint.',
-   quotes:[{t:'A film that breathes.',a:'Cahaya Cinema',r:'Critic'},{t:'Astonishing restraint from a debut director.',a:'Festival Jury',r:''}],
-   imdb:'7.8',rt:88,
-   videos:[{label:'Trailer',id:'zSWdZVtXT7E'}],
+   synopsis:'Set in rain-soaked Indonesia, The Quiet Love follows Dira, a grieving composer, and Sena, a wandering photographer, orbiting each other across one rainy season. A debut film of astonishing restraint.',
+   quotes:[{t:'A film that breathes.',a:'Cahaya Cinema',r:'Critic'}],
+   imdb:'7.8',rt:88,videos:[{label:'Trailer',id:'zSWdZVtXT7E'}],
    poster:'https://images.unsplash.com/photo-1514316454349-750a7fd3da3a?w=500&q=80',
-   stills:['https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=780&q=80','https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=780&q=80','https://images.unsplash.com/photo-1485846234645-a62644f84728?w=780&q=80','https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=780&q=80'],
+   stills:['https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=780','https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=780','https://images.unsplash.com/photo-1485846234645-a62644f84728?w=780','https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=780'],
    theme:{colors:['#3d1c5e','#c0392b','#1a0a2e'],speed:.45,behavior:'gentle'},
-   why:'Based on your love of contemplative, emotionally rich cinema, this debut feature will resonate deeply.',
-   sndId:'dh3bleXHC0Q',sndTitle:'Original Score',sndComposer:'Nindra Kurniawan',
-   funFacts:['Shot entirely in 17 days during Indonesia\'s real monsoon season.','The lead actress improvised 70% of her dialogue.','The score was composed on a single out-of-tune piano found in Bandung.']},
+   why:'Based on your love of contemplative, emotionally rich cinema.',
+   sndId:'dh3bleXHC0Q',sndTitle:'Original Score',sndComp:'Nindra Kurniawan',
+   funFacts:['Shot entirely in 17 days during Indonesia\'s real monsoon.','The lead actress improvised 70% of her dialogue.','The score was composed on a single out-of-tune piano found in Bandung.']},
 
-  {id:'interstellar',title:'Interstellar',year:'2014',director:'Christopher Nolan',rating:'4.7',
+  {id:'interstellar',title:'Interstellar',year:'2014',director:'Christopher Nolan',rating:'4.7',tmdbId:157336,
    logline:'Love is the one thing that transcends time and space.',
    synopsis:'In a dying Earth, former NASA pilot Cooper travels through a wormhole to find humanity a new home. Leaving behind his daughter Murph, he faces black holes, time dilation, and the limits of human understanding.',
-   quotes:[{t:'Hans Zimmer\'s score alone is worth the price of admission.',a:'Roger Ebert.com',r:'Review'},{t:'We had to solve equations never solved before to make Gargantua accurate.',a:'Kip Thorne',r:'Scientific Advisor'}],
-   imdb:'8.7',rt:73,
-   videos:[{label:'Teaser',id:'0vxOhd4qlnA'},{label:'Trailer',id:'zSWdZVtXT7E'},{label:'Behind the Scenes',id:'zSWdZVtXT7E'}],
+   quotes:[{t:'Hans Zimmer\'s score alone is worth the price of admission.',a:'Roger Ebert.com',r:''},{t:'We had to solve equations never solved before to make Gargantua accurate.',a:'Kip Thorne',r:'Scientific Advisor'}],
+   imdb:'8.7',rt:73,videos:[{label:'Teaser',id:'0vxOhd4qlnA'},{label:'Trailer',id:'zSWdZVtXT7E'},{label:'BTS',id:'zSWdZVtXT7E'}],
    poster:'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
-   stills:['https://image.tmdb.org/t/p/w780/xu9zaAevzQ5nnrsXN6JcahLnG4i.jpg','https://image.tmdb.org/t/p/w780/bHarw8xerTlo8fLkPyv8OISkRDW.jpg','https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=780&q=80','https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=780&q=80'],
+   stills:['https://image.tmdb.org/t/p/w780/xu9zaAevzQ5nnrsXN6JcahLnG4i.jpg','https://image.tmdb.org/t/p/w780/bHarw8xerTlo8fLkPyv8OISkRDW.jpg','https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=780','https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=780'],
    theme:{colors:['#0d1b4b','#1565c0','#7b1fa2','#00acc1','#0a0a1a'],speed:.35,behavior:'orbital'},
-   why:'Your 4.5+ star ratings on Nolan\'s work and your interest in philosophical sci-fi make this essential.',
-   sndId:'mxUAEoVPHzA',sndTitle:'Cornfield Chase',sndComposer:'Hans Zimmer',
-   funFacts:['The Gargantua black hole depiction led to a real peer-reviewed scientific paper.','The wormhole correctly appears as a sphere — as actual physics dictates.','McConaughey asked to really cry in the NASA video scene. Nolan agreed. First take. Done.','The corn field was grown for the film — then sold, turning a profit.']},
+   why:'Your 4.5+ star ratings on Nolan\'s work and interest in philosophical sci-fi make this essential.',
+   sndId:'mxUAEoVPHzA',sndTitle:'Cornfield Chase',sndComp:'Hans Zimmer',
+   funFacts:['The Gargantua black hole led to a real peer-reviewed scientific paper.','The wormhole correctly appears as a sphere, as actual physics dictates.','McConaughey asked to really cry in the NASA video scene. First take. Done.','The corn field was grown for the film — then sold, turning a profit.']},
 
-  {id:'dune2',title:'Dune: Part Two',year:'2024',director:'Denis Villeneuve',rating:'4.5',
+  {id:'dune2',title:'Dune: Part Two',year:'2024',director:'Denis Villeneuve',rating:'4.5',tmdbId:693134,
    logline:'The legend of Paul Atreides will be written in blood and sand.',
-   synopsis:'Paul Atreides joins the Fremen in the deep desert, falling in love with Chani while growing into the prophesied Lisan al Gaib. Forced to choose between love and duty, Paul\'s rise threatens to ignite a holy war across the universe.',
-   quotes:[{t:'An immersive, overwhelming experience — cinema at its most operatic.',a:'The Guardian',r:'5/5'},{t:'I wanted to avoid making Star Wars. I wanted Lawrence of Arabia in space.',a:'Denis Villeneuve',r:'Director'}],
-   imdb:'8.5',rt:92,
-   videos:[{label:'Official Trailer',id:'Way9Dexny3w'},{label:'Final Trailer',id:'Way9Dexny3w'},{label:'Featurette',id:'Way9Dexny3w'}],
+   synopsis:'Paul Atreides joins the Fremen in the deep desert, falling in love with Chani while growing into the prophesied Lisan al Gaib. Forced to choose between love and duty, his rise threatens a holy war across the universe.',
+   quotes:[{t:'An immersive, overwhelming experience — cinema at its most operatic.',a:'The Guardian',r:'5/5'},{t:'I wanted Lawrence of Arabia in space.',a:'Denis Villeneuve',r:'Director'}],
+   imdb:'8.5',rt:92,videos:[{label:'Official Trailer',id:'Way9Dexny3w'},{label:'Final Trailer',id:'Way9Dexny3w'},{label:'Featurette',id:'Way9Dexny3w'}],
    poster:'https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg',
-   stills:['https://image.tmdb.org/t/p/w780/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg','https://images.unsplash.com/photo-1509023464722-18d996393ca8?w=780&q=80','https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=780&q=80','https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=780&q=80'],
+   stills:['https://image.tmdb.org/t/p/w780/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg','https://images.unsplash.com/photo-1509023464722-18d996393ca8?w=780','https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=780','https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=780'],
    theme:{colors:['#c8860a','#8b4513','#d4a017','#3d1c0a'],speed:.6,behavior:'desert'},
    why:'You rated Part One highly and love director-driven epics. This is even more ambitious.',
-   sndId:'9IVBfRlhUGs',sndTitle:'Arrival in Arrakeen',sndComposer:'Hans Zimmer',
-   funFacts:['Shot in Abu Dhabi\'s Liwa Desert at 50°C+.','Timothée Chalamet spent 6 months on Fremen combat choreography.','Hans Zimmer invented entirely new instruments based on sounds described in the novel.','600 tonnes of real black sand were shipped to Budapest for the arena sequence.']},
+   sndId:'9IVBfRlhUGs',sndTitle:'Arrival in Arrakeen',sndComp:'Hans Zimmer',
+   funFacts:['Shot in Abu Dhabi\'s Liwa Desert at temperatures exceeding 50°C.','Timothée Chalamet spent 6 months on Fremen combat choreography.','Hans Zimmer invented entirely new instruments based on the novel\'s sounds.','600 tonnes of real black sand were shipped to Budapest for the arena sequence.']},
 
-  {id:'oppenheimer',title:'Oppenheimer',year:'2023',director:'Christopher Nolan',rating:'4.4',
+  {id:'oppenheimer',title:'Oppenheimer',year:'2023',director:'Christopher Nolan',rating:'4.4',tmdbId:872585,
    logline:'The man who became Death. The man who built the future.',
    synopsis:'Theoretical physicist J. Robert Oppenheimer leads the Manhattan Project to build the world\'s first atomic bomb. His success transforms into a political weapon — a triptych of ambition, conscience, and consequence.',
-   quotes:[{t:'Now I am become Death, the destroyer of worlds.',a:'J. Robert Oppenheimer',r:'After Trinity Test'},{t:'Cillian Murphy carries the entire weight of the 20th century on his face.',a:'The New Yorker',r:''}],
-   imdb:'8.9',rt:93,
-   videos:[{label:'Teaser',id:'uYPbbksJxIg'},{label:'Trailer',id:'uYPbbksJxIg'},{label:'IMAX Featurette',id:'uYPbbksJxIg'}],
+   quotes:[{t:'Now I am become Death, the destroyer of worlds.',a:'J. Robert Oppenheimer',r:'After Trinity'},{t:'Cillian Murphy carries the entire weight of the 20th century on his face.',a:'The New Yorker',r:''}],
+   imdb:'8.9',rt:93,videos:[{label:'Teaser',id:'uYPbbksJxIg'},{label:'Trailer',id:'uYPbbksJxIg'},{label:'IMAX',id:'uYPbbksJxIg'}],
    poster:'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',
-   stills:['https://image.tmdb.org/t/p/w780/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg','https://images.unsplash.com/photo-1602526430780-782d6b1783fa?w=780&q=80','https://images.unsplash.com/photo-1571019613576-2b22c76fd955?w=780&q=80','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=780&q=80'],
+   stills:['https://image.tmdb.org/t/p/w780/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg','https://images.unsplash.com/photo-1602526430780-782d6b1783fa?w=780','https://images.unsplash.com/photo-1571019613576-2b22c76fd955?w=780','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=780'],
    theme:{colors:['#ff4500','#ff8c00','#ffd700','#8b0000','#1a0000'],speed:1.2,behavior:'explosive'},
    why:'You\'ve rated multiple Nolan films above 4.4. This may be his most emotionally devastating work.',
-   sndId:'1FDFBWGXExA',sndTitle:'Can You Hear the Music',sndComposer:'Ludwig Göransson',
-   funFacts:['The Trinity test explosion was practical — no CGI for the detonation itself.','Cillian Murphy prepared by reading every book written about Oppenheimer.','Göransson composed 80 hours of music before selecting the final 3 hours.','Courtroom scenes were shot in chronological order so actors felt the psychological weight accumulate.']},
+   sndId:'1FDFBWGXExA',sndTitle:'Can You Hear the Music',sndComp:'Ludwig Göransson',
+   funFacts:['The Trinity test explosion was practical — no CGI for the detonation.','Cillian Murphy prepared by reading every book written about Oppenheimer.','Göransson composed 80 hours before selecting the final 3 hours.','Courtroom scenes were shot in order so actors felt the psychological weight accumulate.']},
 
-  {id:'lambs',title:'The Silence of the Lambs',year:'1991',director:'Jonathan Demme',rating:'4.8',
+  {id:'lambs',title:'The Silence of the Lambs',year:'1991',director:'Jonathan Demme',rating:'4.8',tmdbId:274,
    logline:'One mind to catch a monster. Another to keep her from becoming one.',
    synopsis:'FBI trainee Clarice Starling must interview imprisoned cannibal psychiatrist Hannibal Lecter to help profile serial killer Buffalo Bill. Their psychological chess match is unlike anything else in film history.',
-   quotes:[{t:'A census taker tried to test me. I ate his liver with some fava beans and a nice chianti.',a:'Dr. Hannibal Lecter',r:'Anthony Hopkins'},{t:'Hopkins creates horror with nothing more than a stare and a syllable.',a:'Rolling Stone',r:''}],
-   imdb:'8.6',rt:95,
-   videos:[{label:'Trailer',id:'W6Mm8Sbe__o'},{label:'30th Anniversary',id:'W6Mm8Sbe__o'}],
+   quotes:[{t:'A census taker tried to test me. I ate his liver with some fava beans and a nice chianti.',a:'Hannibal Lecter',r:'Hopkins'},{t:'Hopkins creates horror with nothing more than a stare and a syllable.',a:'Rolling Stone',r:''}],
+   imdb:'8.6',rt:95,videos:[{label:'Trailer',id:'W6Mm8Sbe__o'},{label:'30th Anniversary',id:'W6Mm8Sbe__o'}],
    poster:'https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg',
-   stills:['https://images.unsplash.com/photo-1534809027769-b00d750a6bac?w=780&q=80','https://images.unsplash.com/photo-1527261834078-9b37d35a4a32?w=780&q=80','https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=780&q=80','https://images.unsplash.com/photo-1485846234645-a62644f84728?w=780&q=80'],
+   stills:['https://images.unsplash.com/photo-1534809027769-b00d750a6bac?w=780','https://images.unsplash.com/photo-1527261834078-9b37d35a4a32?w=780','https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=780','https://images.unsplash.com/photo-1485846234645-a62644f84728?w=780'],
    theme:{colors:['#1b5e20','#004d40','#212121','#37474f'],speed:.7,behavior:'heartbeat'},
    why:'Your psychological thriller radar is tuned — this is the genre\'s absolute pinnacle.',
-   sndId:'RydnA_5PpMU',sndTitle:'Main Theme',sndComposer:'Howard Shore',
-   funFacts:['Hopkins is on screen only 16 minutes — yet won Best Actor.','Jodie Foster wore actual FBI-issued attire.','The pit scene used a real pit, dug inside the studio.','Hopkins blinked less than once per minute as Lecter — a deliberate, studied acting choice.']},
+   sndId:'RydnA_5PpMU',sndTitle:'Main Theme',sndComp:'Howard Shore',
+   funFacts:['Hopkins is on screen only 16 minutes — yet won Best Actor.','Jodie Foster wore actual FBI-issued attire.','The pit scene used a real pit, dug inside the studio.','Hopkins blinked less than once per minute as Lecter — a deliberate choice.']},
 
-  {id:'parasite',title:'Parasite',year:'2019',director:'Bong Joon Ho',rating:'4.6',
+  {id:'parasite',title:'Parasite',year:'2019',director:'Bong Joon Ho',rating:'4.6',tmdbId:496243,
    logline:'All of this is metaphor.',
    synopsis:'The Kim family infiltrates the wealthy Park household in a scheme that spirals from darkly comic to something far more dangerous when the basement reveals its own terrible secrets.',
    quotes:[{t:'Once you overcome the one-inch barrier of subtitles, you\'ll be introduced to so many more amazing films.',a:'Bong Joon Ho',r:'Director'},{t:'The most precise social satire since Dr. Strangelove.',a:'The Atlantic',r:''}],
-   imdb:'8.5',rt:99,
-   videos:[{label:'Trailer',id:'5xH0HfJHsaY'},{label:'Q&A',id:'5xH0HfJHsaY'}],
+   imdb:'8.5',rt:99,videos:[{label:'Trailer',id:'5xH0HfJHsaY'},{label:'Q&A',id:'5xH0HfJHsaY'}],
    poster:'https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg',
-   stills:['https://image.tmdb.org/t/p/w780/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg','https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=780&q=80','https://images.unsplash.com/photo-1464207687429-7505649dae38?w=780&q=80','https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=780&q=80'],
+   stills:['https://image.tmdb.org/t/p/w780/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg','https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=780','https://images.unsplash.com/photo-1464207687429-7505649dae38?w=780','https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=780'],
    theme:{colors:['#1a1a2e','#0f3460','#e94560','#533483'],speed:.8,behavior:'split'},
    why:'If you love intelligent, genre-subverting cinema, this is essential — and shocking.',
-   sndId:'Oig3mFqUlYw',sndTitle:'Belt of Faith',sndComposer:'Jung Jae-il',
-   funFacts:['The semi-basement set took 3 months to build — the flooding scene used real water.','Bong carried the core idea for 10 years before writing the screenplay.','The Park house is deliberately architecturally impossible — sight-lines are deceiving by design.','Every single frame was planned in storyboard detail before shooting.']},
+   sndId:'Oig3mFqUlYw',sndTitle:'Belt of Faith',sndComp:'Jung Jae-il',
+   funFacts:['The semi-basement set took 3 months to build — the flooding scene used real water.','Bong carried the core idea for 10 years before writing the screenplay.','The Park house is deliberately architecturally impossible by design.','Every single frame was storyboarded in detail before shooting.']},
 
-  {id:'dark-knight',title:'The Dark Knight',year:'2008',director:'Christopher Nolan',rating:'4.9',
+  {id:'dark-knight',title:'The Dark Knight',year:'2008',director:'Christopher Nolan',rating:'4.9',tmdbId:155,
    logline:'Some men just want to watch the world burn.',
    synopsis:'The Joker, a criminal with no plan except chaos, systematically dismantles Harvey Dent\'s crusade and Batman\'s moral code, forcing the Dark Knight to confront whether a city\'s hero must become its monster.',
-   quotes:[{t:'Why so serious?',a:'The Joker',r:'Heath Ledger'},{t:'Heath Ledger\'s Joker is the most haunting performance in any comic book film — and perhaps any film.',a:'Time Magazine',r:''},{t:'I wanted the Joker to feel like a force of nature — not a supervillain, but an idea.',a:'Christopher Nolan',r:'Director'}],
-   imdb:'9.0',rt:94,
-   videos:[{label:'Teaser',id:'EXeTwQWrcwY'},{label:'Trailer',id:'EXeTwQWrcwY'},{label:'TV Spot',id:'EXeTwQWrcwY'}],
+   quotes:[{t:'Why so serious?',a:'The Joker',r:'Heath Ledger'},{t:'Heath Ledger\'s Joker is the most haunting performance in any comic book film.',a:'Time Magazine',r:''},{t:'I wanted the Joker to feel like a force of nature — not a supervillain, but an idea.',a:'Christopher Nolan',r:'Director'}],
+   imdb:'9.0',rt:94,videos:[{label:'Teaser',id:'EXeTwQWrcwY'},{label:'Trailer',id:'EXeTwQWrcwY'},{label:'TV Spot',id:'EXeTwQWrcwY'}],
    poster:'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
-   stills:['https://image.tmdb.org/t/p/w780/nMKdUFJU62Xm0lgZpFpzQAWMEUW.jpg','https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=780&q=80','https://images.unsplash.com/photo-1531259683007-016a7b628fc3?w=780&q=80','https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=780&q=80'],
+   stills:['https://image.tmdb.org/t/p/w780/nMKdUFJU62Xm0lgZpFpzQAWMEUW.jpg','https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=780','https://images.unsplash.com/photo-1531259683007-016a7b628fc3?w=780','https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=780'],
    theme:{colors:['#0a1628','#1565c0','#ff8f00','#1a1a1a'],speed:.9,behavior:'chaos'},
-   why:'As a Nolan loyalist, this is the crown jewel — the definitive superhero film.',
-   sndId:'EYfmfT8OQKI',sndTitle:'Why So Serious',sndComposer:'Hans Zimmer & James Newton Howard',
-   funFacts:['Heath Ledger kept a personal diary written entirely in character as the Joker for months before filming.','The truck flip in Chicago was done practically — a real semi-truck, 6 takes.','Ledger directed his own close-up scenes — Nolan gave him complete creative control.','The hospital explosion was a real demolition. Ledger\'s mid-scene pause was him waiting for delayed charges — staying perfectly in character.']}
+   why:'As a Nolan loyalist with a taste for psychological complexity, this is the crown jewel.',
+   sndId:'EYfmfT8OQKI',sndTitle:'Why So Serious',sndComp:'Hans Zimmer',
+   funFacts:['Heath Ledger kept a journal written entirely in character as the Joker for months.','The truck flip in Chicago was done practically — a real semi-truck, 6 takes.','Ledger directed his own close-up scenes — Nolan gave him complete control.','The hospital explosion was a real demolition. Ledger\'s pause was him waiting for delayed charges — staying in character throughout.']}
 ];
 
 const LISTS = {
@@ -735,76 +741,64 @@ const LISTS = {
 };
 
 const REVIEWS = [
-  {user:'Sarah',avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80',movieId:'dune2',movieTitle:'Dune: Part Two',stars:4.5,text:'Denis Villeneuve does it again. The sheer scale and sound design had my seat shaking. The way he uses silence as a weapon is extraordinary. Chani\'s arc is devastating. Lisan al Gaib!',likes:42,comments:[{u:'Diki',t:'Completely agree. The IMAX mix is a religious experience.'},{u:'Maya',t:'Chani carried this whole film for me.'}]},
-  {user:'Diki',avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80',movieId:'lambs',movieTitle:'The Silence of the Lambs',stars:5,text:'Rewatched this for a masterclass in tension. Hopkins is terrifying with just a stare — he doesn\'t blink, doesn\'t smile, just exists as pure malevolence. The quid pro quo dynamic is unmatched.',likes:78,comments:[{u:'Sarah',t:'Hopkins — 16 minutes. Best Actor. Legend.'},{u:'Maya',t:'Best psychological exchange in cinema.'}]},
-  {user:'Maya',avatar:'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80',movieId:'parasite',movieTitle:'Parasite',stars:5,text:'Mind-blowing. The way it shifts genres three times without warning is pure genius. Bong sets up every single payoff in the first 20 minutes. The staircase symbolism alone deserves a dissertation.',likes:121,comments:[{u:'Diki',t:'First non-English Best Picture. Fully deserved.'},{u:'Sarah',t:'The smell motif!!! I think about it weekly.'}]}
+  {user:'Sarah',avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80',movieId:'dune2',movieTitle:'Dune: Part Two',stars:4.5,text:'Denis Villeneuve does it again. The sheer scale and sound design had my seat shaking. The way he uses silence as a weapon is extraordinary. Lisan al Gaib!',likes:42,comments:[{u:'Diki',t:'Completely agree. The IMAX mix is a religious experience.'},{u:'Maya',t:'Chani carried this whole film.'}]},
+  {user:'Diki',avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80',movieId:'lambs',movieTitle:'The Silence of the Lambs',stars:5,text:'Rewatched this for a masterclass in tension. Hopkins doesn\'t blink, doesn\'t smile, just exists as pure malevolence. The quid pro quo dynamic is unmatched.',likes:78,comments:[{u:'Sarah',t:'16 minutes. Best Actor. Legend.'},{u:'Maya',t:'Best psychological exchange in cinema.'}]},
+  {user:'Maya',avatar:'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80',movieId:'parasite',movieTitle:'Parasite',stars:5,text:'Mind-blowing. The way it shifts genres three times without warning is pure genius. Bong sets up every single payoff in the first 20 minutes.',likes:121,comments:[{u:'Diki',t:'First non-English Best Picture. Deserved.'},{u:'Sarah',t:'The smell motif!!! I think about it weekly.'}]}
 ];
 
-// Mock film log (412 films, we'll generate a bunch)
-const LOG_FILMS = (() => {
-  const extras = [
-    {id:'fightclub',title:'Fight Club',year:'1999',rating:4.8,poster:'https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg'},
-    {id:'2001',title:'2001: A Space Odyssey',year:'1968',rating:4.9,poster:'https://image.tmdb.org/t/p/w500/ve72VxNqjIqd6paQmn3LMGEwosP.jpg'},
-    {id:'taxi',title:'Taxi Driver',year:'1976',rating:4.7,poster:'https://image.tmdb.org/t/p/w500/ekstpH614fwDX8DUln1a2Opz0N8.jpg'},
-    {id:'mulh',title:'Mulholland Drive',year:'2001',rating:4.6,poster:'https://image.tmdb.org/t/p/w500/uCxkRlqJrNWETZ2IBHqALKQ2Hut.jpg'},
-    {id:'shining',title:'The Shining',year:'1980',rating:4.7,poster:'https://image.tmdb.org/t/p/w500/b6ko0IKC8MdYBBPkkA1aBPLe2yz.jpg'},
-    {id:'goodfellas',title:'Goodfellas',year:'1990',rating:4.8,poster:'https://image.tmdb.org/t/p/w500/aKuFiU82s5ISJpGZp7YkIr3kCUd.jpg'},
-    {id:'amelie',title:'Amélie',year:'2001',rating:4.6,poster:'https://image.tmdb.org/t/p/w500/f0TUPaXNpFvGxNQxhIEyHj73bvj.jpg'},
-    {id:'inception',title:'Inception',year:'2010',rating:4.5,poster:'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'},
-  ];
-  const all = [...MOVIES.map(m=>({id:m.id,title:m.title,year:m.year,rating:parseFloat(m.rating),poster:m.poster})),...extras];
-  return all;
-})();
+const LOG_EXTRA = [
+  {id:'fightclub',title:'Fight Club',year:'1999',rating:4.8,poster:'https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg'},
+  {id:'2001',title:'2001: A Space Odyssey',year:'1968',rating:4.9,poster:'https://image.tmdb.org/t/p/w500/ve72VxNqjIqd6paQmn3LMGEwosP.jpg'},
+  {id:'taxi',title:'Taxi Driver',year:'1976',rating:4.7,poster:'https://image.tmdb.org/t/p/w500/ekstpH614fwDX8DUln1a2Opz0N8.jpg'},
+  {id:'mulh',title:'Mulholland Drive',year:'2001',rating:4.6,poster:'https://image.tmdb.org/t/p/w500/uCxkRlqJrNWETZ2IBHqALKQ2Hut.jpg'},
+  {id:'shining',title:'The Shining',year:'1980',rating:4.7,poster:'https://image.tmdb.org/t/p/w500/b6ko0IKC8MdYBBPkkA1aBPLe2yz.jpg'},
+  {id:'goodfellas',title:'Goodfellas',year:'1990',rating:4.8,poster:'https://image.tmdb.org/t/p/w500/aKuFiU82s5ISJpGZp7YkIr3kCUd.jpg'},
+  {id:'amelie',title:'Amélie',year:'2001',rating:4.6,poster:'https://image.tmdb.org/t/p/w500/f0TUPaXNpFvGxNQxhIEyHj73bvj.jpg'},
+  {id:'inception',title:'Inception',year:'2010',rating:4.5,poster:'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'},
+];
+const ALL_LOG = [...MOVIES.map(m=>({id:m.id,title:m.title,year:m.year,rating:parseFloat(m.rating),poster:m.poster})),...LOG_EXTRA];
 
 // ══════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════
-let curMovie = MOVIES[0];
-let curReview = REVIEWS[0];
-let ytPlayer = null, sndPlayer = null;
-let isMuted = true, isPlaying = true;
-let sndMuted = true, sndPlaying = false;
-let ffIdx = 0, ffTimer = null;
-let fabOpen = false;
-let logRating = 0;
-let liked = false;
-let navStack = [];
-let curVidIdx = 0;
-let obStep = 0;
-const obData = {};
+let curMovie=MOVIES[0],curReview=REVIEWS[0];
+let ytPlayer=null,sndPlayer=null;
+let isMuted=true,isPlaying=true;
+let sndMuted=true,sndIsPlaying=false;
+let ffIdx=0,ffTimer=null;
+let fabOpen=false,logRating=0,liked=false;
+let navStack=[],curVidIdx=0;
+let obStep=0;
+const obData={};
 
 // ══════════════════════════════════════════
-// CANVAS BACKGROUND
+// CANVAS BG
 // ══════════════════════════════════════════
-const canvas = document.getElementById('bg-canvas');
-const ctx = canvas.getContext('2d');
-let blobs = [];
-let mouse = {x:innerWidth/2,y:innerHeight/2};
-let bgTheme = {colors:['#0d1b4b','#1a0a2e','#0a1628'],speed:.4,behavior:'default'};
-let analyzing = false;
+const canvas=document.getElementById('bg-canvas');
+const ctx=canvas.getContext('2d');
+let blobs=[],mouse={x:innerWidth/2,y:innerHeight/2};
+let bgTheme={colors:['#0d1b4b','#1a0a2e','#0a1628'],speed:.4,behavior:'default'};
+let analyzing=false;
 
 function resizeCanvas(){canvas.width=innerWidth;canvas.height=innerHeight}
-function makeBlobs(theme){
-  blobs = theme.colors.map((col,i)=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,r:180+Math.random()*280,color:col,phase:Math.random()*Math.PI*2,pp:Math.random()*Math.PI*2}));
-}
+function makeBlobs(t){blobs=t.colors.map((_,i)=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,r:180+Math.random()*280,color:t.colors[i],ph:Math.random()*Math.PI*2,pp:Math.random()*Math.PI*2}))}
 function h2r(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]}
 function drawBG(){
   const W=canvas.width,H=canvas.height,t=Date.now()/1000;
   const spd=bgTheme.speed*(analyzing?3.5:1);
   ctx.clearRect(0,0,W,H);ctx.fillStyle='#07070a';ctx.fillRect(0,0,W,H);
   blobs.forEach((b,i)=>{
-    b.phase+=.005*spd;b.pp+=.009*spd;
+    b.ph+=.005*spd;b.pp+=.009*spd;
     const pulse=1+Math.sin(b.pp)*.15;
-    const dx=mouse.x-b.x,dy=mouse.y-b.y,dist=Math.sqrt(dx*dx+dy*dy);
+    const dx=mouse.x-b.x,dy=mouse.y-b.y,dist=Math.hypot(dx,dy)||1;
     if(dist<700){b.vx+=dx/dist*.006*spd;b.vy+=dy/dist*.006*spd}
-    if(bgTheme.behavior==='orbital'){b.vx+=Math.cos(b.phase+i*1.3)*.025;b.vy+=Math.sin(b.phase+i*1.3)*.025}
+    if(bgTheme.behavior==='orbital'){b.vx+=Math.cos(b.ph+i*1.3)*.025;b.vy+=Math.sin(b.ph+i*1.3)*.025}
     else if(bgTheme.behavior==='explosive'){b.vx+=(Math.random()-.5)*.05*spd;b.vy+=(Math.random()-.5)*.05*spd}
-    else if(bgTheme.behavior==='heartbeat'){const h2=Math.sin(t*2.5+i)*.016;b.vx+=h2;b.vy+=h2}
-    else if(bgTheme.behavior==='desert'){b.vx+=Math.sin(b.phase*.3+i)*.022;b.vy+=Math.cos(b.phase*.7)*.009}
-    else if(bgTheme.behavior==='split'){b.vx+=i%2===0?.016:-.016;b.vy+=Math.sin(b.phase)*.02}
+    else if(bgTheme.behavior==='heartbeat'){const hb=Math.sin(t*2.5+i)*.016;b.vx+=hb;b.vy+=hb}
+    else if(bgTheme.behavior==='desert'){b.vx+=Math.sin(b.ph*.3+i)*.022;b.vy+=Math.cos(b.ph*.7)*.009}
+    else if(bgTheme.behavior==='split'){b.vx+=i%2===0?.016:-.016;b.vy+=Math.sin(b.ph)*.02}
     else if(bgTheme.behavior==='chaos'){b.vx+=(Math.random()-.5)*.07*spd;b.vy+=(Math.random()-.5)*.07*spd}
-    else if(bgTheme.behavior==='gentle'){b.vx+=Math.sin(b.phase*.4+i)*.012;b.vy+=Math.cos(b.phase*.3+i)*.01}
-    else{b.vx+=Math.sin(b.phase*.5+i)*.018;b.vy+=Math.cos(b.phase*.5+i)*.015}
+    else{b.vx+=Math.sin(b.ph*.5+i)*.018;b.vy+=Math.cos(b.ph*.5+i)*.015}
     b.vx*=.975;b.vy*=.975;
     b.vx=Math.max(-1.8,Math.min(1.8,b.vx));b.vy=Math.max(-1.8,Math.min(1.8,b.vy));
     b.x+=b.vx;b.y+=b.vy;
@@ -812,25 +806,25 @@ function drawBG(){
     if(b.y<-b.r)b.y=H+b.r;if(b.y>H+b.r)b.y=-b.r;
     try{const[r,g,bv]=h2r(b.color);const gr=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r*pulse);
     gr.addColorStop(0,`rgba(${r},${g},${bv},.36)`);gr.addColorStop(.5,`rgba(${r},${g},${bv},.12)`);gr.addColorStop(1,`rgba(${r},${g},${bv},0)`);
-    ctx.fillStyle=gr;ctx.beginPath();ctx.ellipse(b.x,b.y,b.r*pulse,b.r*.7*pulse,b.phase*.2,0,Math.PI*2);ctx.fill();}catch(e){}
+    ctx.fillStyle=gr;ctx.beginPath();ctx.ellipse(b.x,b.y,b.r*pulse,b.r*.7*pulse,b.ph*.2,0,Math.PI*2);ctx.fill()}catch(e){}
   });
   ctx.fillStyle='rgba(7,7,10,.44)';ctx.fillRect(0,0,W,H);
 }
-function animBG(){drawBG();requestAnimationFrame(animBG)}
+(function anim(){drawBG();requestAnimationFrame(anim)})();
 function setTheme(t){bgTheme=t;makeBlobs(t)}
 window.addEventListener('resize',()=>{resizeCanvas();makeBlobs(bgTheme)});
 window.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
-resizeCanvas();makeBlobs(bgTheme);animBG();
+resizeCanvas();makeBlobs(bgTheme);
 
 // ══════════════════════════════════════════
-// CUSTOM CURSOR
+// CURSOR
 // ══════════════════════════════════════════
-const ring=document.getElementById('cur-ring'),dot=document.getElementById('cur-dot');
+const ring=document.getElementById('cring'),cdot=document.getElementById('cdot');
 let mx=0,my=0,rx=0,ry=0;
-document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx+'px';dot.style.top=my+'px'});
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cdot.style.left=mx+'px';cdot.style.top=my+'px'});
 (function animCur(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animCur)})();
 function bindCursor(){
-  document.querySelectorAll('button,a,[onclick],input,select,textarea,.pcard,.ti,.fi,.fc,.lcard,.bc,.mi,.lg-item,.genre-btn,.filter-btn,.vid-tab').forEach(el=>{
+  document.querySelectorAll('button,a,[onclick]:not(p):not(h1):not(div.tb),.pc2,.ti,.fi,.fcard,.lcard,.bc,.mi,.lgi,.gbtn,.fb2,.vtab').forEach(el=>{
     if(!el._cb){el._cb=1;
       el.addEventListener('mouseenter',()=>document.body.classList.add('clh'));
       el.addEventListener('mouseleave',()=>document.body.classList.remove('clh'));
@@ -839,114 +833,110 @@ function bindCursor(){
 }
 
 // ══════════════════════════════════════════
-// NAV SCROLL + FAB
+// SCROLL + FAB
 // ══════════════════════════════════════════
-const topNav=document.getElementById('top-nav'),navFab=document.getElementById('nav-fab');
+const tnav=document.getElementById('tnav');
 window.addEventListener('scroll',()=>{
   const sc=scrollY>60;
-  topNav.classList.toggle('scrolled',sc);
-  document.body.classList.toggle('nav-sc',sc);
-  navFab.style.opacity=sc?'1':'0';
-  navFab.style.transform=sc?'translateX(0) scale(1)':'translateX(20px) scale(.8)';
-  navFab.style.pointerEvents=sc?'all':'none';
+  tnav.classList.toggle('scrolled',sc);
+  document.body.classList.toggle('nsc',sc);
 });
-
 function toggleFab(){
   fabOpen=!fabOpen;
-  document.getElementById('fab-dd').classList.toggle('open',fabOpen);
-  document.getElementById('fab-icon').className=fabOpen?'ph-bold ph-x':'ph-bold ph-list';
+  document.getElementById('fabdd').classList.toggle('open',fabOpen);
+  document.getElementById('fabicon').className=fabOpen?'ph-bold ph-x':'ph-bold ph-list';
 }
 
 // ══════════════════════════════════════════
 // BACK BUTTON
 // ══════════════════════════════════════════
-const HOME_VIEWS=['home'];
-function updateBackBtn(view){
-  const bb=document.getElementById('back-btn');
-  const lbl=document.getElementById('back-label');
-  if(view==='home'||navStack.length<2){bb.classList.remove('visible');return;}
+const VIEWS_LABELS={home:'Discover',diary:'Profile',filmlog:'My Films',community:'Community',lists:'Lists',ai:'AI Engine'};
+function updateBack(v){
+  const bb=document.getElementById('backbtn');
+  if(v==='home'||navStack.length<2){bb.classList.remove('vis');return}
   const prev=navStack[navStack.length-2];
-  const labels={diary:'Profile',community:'Community',lists:'Lists',filmlog:'My Films',ai:'AI Engine',home:'Discover'};
-  lbl.textContent=labels[prev]||'Back';
-  bb.classList.add('visible');
+  document.getElementById('backlbl').textContent=VIEWS_LABELS[prev]||'Back';
+  bb.classList.add('vis');
 }
 function goBack(){
   if(navStack.length<2)return;
-  navStack.pop();
-  const prev=navStack[navStack.length-1];
-  navStack.pop();
-  navigate(prev);
+  navStack.pop();const prev=navStack[navStack.length-1];navStack.pop();navigate(prev);
 }
 
 // ══════════════════════════════════════════
-// YOUTUBE TRAILER PLAYER
+// YOUTUBE PLAYER
 // ══════════════════════════════════════════
 function loadYTAPI(){const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s)}
 window.onYouTubeIframeAPIReady=function(){
   ytPlayer=new YT.Player('yt-player',{
     videoId:MOVIES[0].videos[0].id,
-    playerVars:{autoplay:1,mute:1,controls:0,modestbranding:1,rel:0,iv_load_policy:3,disablekb:1},
+    playerVars:{autoplay:1,mute:1,controls:0,modestbranding:1,rel:0,iv_load_policy:3,disablekb:1,playlist:MOVIES[0].videos[0].id,loop:1},
     events:{
       onReady:e=>{e.target.mute();e.target.playVideo()},
-      onStateChange:e=>{
-        // Loop: when video ends (state=0), replay
-        if(e.data===0){e.target.seekTo(0);e.target.playVideo();}
-      }
+      onStateChange:e=>{if(e.data===0){e.target.seekTo(0);e.target.playVideo()}}
     }
   });
-  // Soundtrack player
   sndPlayer=new YT.Player('snd-yt-player',{
-    videoId:'',
-    playerVars:{autoplay:0,mute:1,controls:0,modestbranding:1,rel:0,iv_load_policy:3},
-    events:{onStateChange:e=>{if(e.data===0){e.target.seekTo(0);e.target.playVideo();}}}
+    videoId:'',playerVars:{autoplay:0,mute:1,controls:0,modestbranding:1,rel:0},
+    events:{onStateChange:e=>{if(e.data===0){e.target.seekTo(0);if(sndIsPlaying)e.target.playVideo()}}}
   });
 };
 loadYTAPI();
 
 function toggleMute(){
   if(!ytPlayer)return;
-  if(ytPlayer.isMuted()){ytPlayer.unMute();isMuted=false;document.getElementById('mute-icon').className='ph-bold ph-speaker-high'}
-  else{ytPlayer.mute();isMuted=true;document.getElementById('mute-icon').className='ph-bold ph-speaker-slash'}
+  if(ytPlayer.isMuted()){ytPlayer.unMute();isMuted=false;document.getElementById('muteico').className='ph-bold ph-speaker-high'}
+  else{ytPlayer.mute();isMuted=true;document.getElementById('muteico').className='ph-bold ph-speaker-slash'}
 }
 function togglePlay(){
   if(!ytPlayer)return;
-  const s=ytPlayer.getPlayerState();
-  if(s===1){ytPlayer.pauseVideo();isPlaying=false;document.getElementById('play-icon').className='ph-bold ph-play'}
-  else{ytPlayer.playVideo();isPlaying=true;document.getElementById('play-icon').className='ph-bold ph-pause'}
+  if(ytPlayer.getPlayerState()===1){ytPlayer.pauseVideo();isPlaying=false;document.getElementById('playico').className='ph-bold ph-play'}
+  else{ytPlayer.playVideo();isPlaying=true;document.getElementById('playico').className='ph-bold ph-pause'}
 }
-function switchVideo(movie, vidIdx){
-  curVidIdx=vidIdx;
-  const vid=movie.videos[vidIdx];
-  if(ytPlayer&&ytPlayer.loadVideoById){
-    ytPlayer.loadVideoById({videoId:vid.id,startSeconds:0});
-    if(isMuted)ytPlayer.mute();
-  }
-  document.querySelectorAll('.vid-tab').forEach((t,i)=>t.classList.toggle('active',i===vidIdx));
+function pauseHeroVideo(){
+  if(ytPlayer&&ytPlayer.pauseVideo&&isPlaying){ytPlayer.pauseVideo()}
+}
+function switchVideo(movie,idx){
+  curVidIdx=idx;
+  const vid=movie.videos[idx];
+  if(ytPlayer&&ytPlayer.loadVideoById){ytPlayer.loadVideoById({videoId:vid.id,startSeconds:0});if(isMuted)ytPlayer.mute()}
+  document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('av',i===idx));
 }
 
 // ══════════════════════════════════════════
-// SOUNDTRACK PLAYER
+// SOUNDTRACK
 // ══════════════════════════════════════════
-function loadSoundtrack(movie){
-  document.getElementById('snd-title').textContent=movie.sndTitle||'Official Soundtrack';
-  document.getElementById('snd-sub').textContent=movie.sndComposer||'';
-  sndPlaying=false;sndMuted=true;
-  document.getElementById('snd-play-icon').className='ph-bold ph-play';
-  document.getElementById('snd-mute-icon').className='ph-bold ph-speaker-slash';
-  document.getElementById('snd-play-btn').classList.remove('playing');
-  if(sndPlayer&&sndPlayer.cueVideoById&&movie.sndId){
-    sndPlayer.cueVideoById({videoId:movie.sndId,startSeconds:0});
-  }
+function loadSnd(m){
+  document.getElementById('sndt').textContent=m.sndTitle||'Soundtrack';
+  document.getElementById('snds').textContent=m.sndComp||'';
+  sndIsPlaying=false;sndMuted=true;
+  document.getElementById('sndpico').className='ph-bold ph-play';
+  document.getElementById('sndpbtn').classList.remove('playing');
+  document.getElementById('sndmico').className='ph-bold ph-speaker-slash';
+  if(sndPlayer&&sndPlayer.cueVideoById&&m.sndId)sndPlayer.cueVideoById({videoId:m.sndId,startSeconds:0});
 }
-function sndTogglePlay(){
+function sndPlay(){
   if(!sndPlayer||!sndPlayer.playVideo)return;
-  if(sndPlaying){sndPlayer.pauseVideo();sndPlaying=false;document.getElementById('snd-play-icon').className='ph-bold ph-play';document.getElementById('snd-play-btn').classList.remove('playing')}
-  else{sndPlayer.playVideo();sndPlaying=true;sndMuted=false;sndPlayer.unMute();document.getElementById('snd-play-icon').className='ph-bold ph-pause';document.getElementById('snd-play-btn').classList.add('playing');document.getElementById('snd-mute-icon').className='ph-bold ph-speaker-high'}
+  if(sndIsPlaying){sndPlayer.pauseVideo();sndIsPlaying=false;document.getElementById('sndpico').className='ph-bold ph-play';document.getElementById('sndpbtn').classList.remove('playing')}
+  else{sndPlayer.playVideo();sndPlayer.unMute();sndIsPlaying=true;sndMuted=false;document.getElementById('sndpico').className='ph-bold ph-pause';document.getElementById('sndpbtn').classList.add('playing');document.getElementById('sndmico').className='ph-bold ph-speaker-high'}
 }
-function sndToggleMute(){
+function sndMute(){
   if(!sndPlayer)return;
-  if(sndMuted){sndPlayer.unMute();sndMuted=false;document.getElementById('snd-mute-icon').className='ph-bold ph-speaker-high'}
-  else{sndPlayer.mute();sndMuted=true;document.getElementById('snd-mute-icon').className='ph-bold ph-speaker-slash'}
+  if(sndMuted){sndPlayer.unMute();sndMuted=false;document.getElementById('sndmico').className='ph-bold ph-speaker-high'}
+  else{sndPlayer.mute();sndMuted=true;document.getElementById('sndmico').className='ph-bold ph-speaker-slash'}
+}
+
+// ══════════════════════════════════════════
+// TMDB — fetch real backdrops
+// ══════════════════════════════════════════
+async function fetchTMDBStills(tmdbId){
+  if(!tmdbId)return null;
+  try{
+    const r=await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/images?api_key=${TMDB}&include_image_language=en,null`);
+    const d=await r.json();
+    const bds=(d.backdrops||[]).slice(0,4).map(b=>TMDB_IMG+'w780'+b.file_path);
+    return bds.length?bds:null;
+  }catch(e){return null}
 }
 
 // ══════════════════════════════════════════
@@ -956,7 +946,7 @@ function buildCarousel(){
   const row=document.getElementById('poster-row');
   MOVIES.forEach((m,i)=>{
     const c=document.createElement('div');
-    c.className='pcard'+(i===0?' ap':'');
+    c.className='pc2'+(i===0?' ap':'');
     c.style.backgroundImage=`url('${m.poster}')`;
     c.title=m.title;
     c.addEventListener('mouseenter',()=>activatePoster(m,c));
@@ -964,62 +954,58 @@ function buildCarousel(){
     row.appendChild(c);
   });
 }
-function activatePoster(movie,card){
-  if(curMovie.id===movie.id)return;
-  curMovie=movie;
-  document.querySelectorAll('.pcard').forEach(c=>c.classList.remove('ap'));
-  card.classList.add('ap');
-  const fade=document.getElementById('hero-fade'),cnt=document.getElementById('hero-cnt');
+function activatePoster(m,card){
+  if(curMovie.id===m.id)return;
+  curMovie=m;
+  document.querySelectorAll('.pc2').forEach(c=>c.classList.remove('ap'));card.classList.add('ap');
+  const fade=document.getElementById('hfade'),cnt=document.getElementById('hcnt');
   fade.style.opacity='1';cnt.style.opacity='0';cnt.style.transform='translateY(12px)';
-  setTimeout(()=>{
-    applyHero(movie);
-    switchVideo(movie,0);
-    setTheme(movie.theme);
-    fade.style.opacity='0';cnt.style.opacity='1';cnt.style.transform='translateY(0)';
-  },380);
+  setTimeout(()=>{applyHero(m);switchVideo(m,0);setTheme(m.theme);fade.style.opacity='0';cnt.style.opacity='1';cnt.style.transform='translateY(0)'},380);
 }
 function applyHero(m){
-  document.getElementById('h-title').textContent=m.title;
-  document.getElementById('h-desc').textContent=m.logline||m.synopsis.slice(0,110)+'…';
-  document.getElementById('log-title').textContent=m.title;
-  // Video tabs
-  const tabsEl=document.getElementById('vid-tabs');
-  tabsEl.innerHTML=m.videos.map((v,i)=>`<button class="vid-tab${i===0?' active':''}" onclick="switchVideo(MOVIES.find(x=>x.id==='${m.id}'),${i})">${v.label}</button>`).join('');
+  document.getElementById('htitle').textContent=m.title;
+  document.getElementById('hdesc').textContent=m.logline||m.synopsis.slice(0,110)+'…';
+  document.getElementById('logtitle').textContent=m.title;
+  const tabsEl=document.getElementById('vtabs');
+  tabsEl.innerHTML=m.videos.map((v,i)=>`<button class="vtab${i===0?' av':''}" onclick="switchVideo(MOVIES.find(x=>x.id==='${m.id}'),${i})">${v.label}</button>`).join('');
 }
 function goToHeroMovie(){populateMovie(curMovie);navigate('movie')}
 
 // ══════════════════════════════════════════
 // MOVIE DETAIL
 // ══════════════════════════════════════════
-function populateMovie(m){
+async function populateMovie(m){
   curMovie=m;
-  document.getElementById('md-art').style.backgroundImage=`url('${m.poster}')`;
-  document.getElementById('md-poster').src=m.poster;
-  document.getElementById('md-title').textContent=m.title;
-  document.getElementById('md-logline').textContent=m.logline||'';
-  document.getElementById('md-year').textContent=m.year;
-  document.getElementById('md-dir').textContent='Directed by '+m.director;
-  document.getElementById('md-rating').textContent=m.rating;
-  document.getElementById('md-synopsis').textContent=m.synopsis;
-  document.getElementById('md-why').textContent=m.why||'Based on your viewing history, you\'re likely to enjoy this.';
-  document.getElementById('log-title').textContent=m.title;
-  document.getElementById('md-quotes').innerHTML=m.quotes.map(q=>`<div class="qb"><p>"${q.t}"</p><cite>— ${q.a}${q.r?', '+q.r:''}</cite></div>`).join('');
-  document.getElementById('md-ext').innerHTML=`<a class="rchip" href="https://www.imdb.com/find?q=${encodeURIComponent(m.title)}" target="_blank" rel="noopener"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/IMDB_Logo_2016.svg" alt="IMDb"> ${m.imdb}/10</a><a class="rchip" href="https://www.rottentomatoes.com/search?search=${encodeURIComponent(m.title)}" target="_blank" rel="noopener">🍅 ${m.rt}%</a>`;
-  // Stills
-  const sg=document.getElementById('stills-grid');
-  sg.innerHTML=m.stills.slice(0,4).map(s=>`<img class="still" src="${s}" alt="Still" loading="lazy" onerror="this.style.display='none'">`).join('');
-  // Soundtrack
-  loadSoundtrack(m);
-  // Fun fact
-  ffIdx=0;showFF(m);
+  document.getElementById('mdart').style.backgroundImage=`url('${m.poster}')`;
+  document.getElementById('mdposter').src=m.poster;
+  document.getElementById('mdtitle').textContent=m.title;
+  document.getElementById('mdlogline').textContent=m.logline||'';
+  document.getElementById('mdyear').textContent=m.year;
+  document.getElementById('mddir').textContent='Directed by '+m.director;
+  document.getElementById('mdrating').textContent=m.rating;
+  document.getElementById('mdsynopsis').textContent=m.synopsis;
+  document.getElementById('mdwhy').textContent=m.why||'Based on your viewing history, you\'re likely to enjoy this.';
+  document.getElementById('logtitle').textContent=m.title;
+  document.getElementById('mdquotes').innerHTML=m.quotes.map(q=>`<div class="qb"><p>"${q.t}"</p><cite>— ${q.a}${q.r?', '+q.r:''}</cite></div>`).join('');
+  document.getElementById('mdext').innerHTML=`<a class="rchip" href="https://www.imdb.com/find?q=${encodeURIComponent(m.title)}" target="_blank" rel="noopener"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/IMDB_Logo_2016.svg" alt="IMDb"> ${m.imdb}/10</a><a class="rchip" href="https://www.rottentomatoes.com/search?search=${encodeURIComponent(m.title)}" target="_blank" rel="noopener">🍅 ${m.rt}%</a>`;
+  // Stills — try TMDB first, fall back to local
+  const sg=document.getElementById('stgrid');
+  sg.innerHTML='<div style="color:var(--mu);font-size:12px;padding:8px">Loading stills…</div>';
+  let stills=m.stills;
+  if(m.tmdbId){
+    const tmdbStills=await fetchTMDBStills(m.tmdbId);
+    if(tmdbStills&&tmdbStills.length)stills=tmdbStills;
+  }
+  sg.innerHTML=stills.slice(0,4).map(s=>`<img class="still" src="${s}" alt="Still" loading="lazy" onerror="this.style.display='none'">`).join('');
+  loadSnd(m);ffIdx=0;showFF(m);
   if(ffTimer)clearInterval(ffTimer);
   ffTimer=setInterval(nextFF,7000);
   setTheme(m.theme);
 }
 function showFF(m){
-  const el=document.getElementById('ff-text');if(!el)return;
-  const facts=(m||curMovie).funFacts;if(!facts)return;
-  el.style.opacity='0';setTimeout(()=>{el.textContent=facts[ffIdx%facts.length];el.style.opacity='1'},280);
+  const el=document.getElementById('fftext');if(!el)return;
+  const f=(m||curMovie).funFacts;if(!f)return;
+  el.style.opacity='0';setTimeout(()=>{el.textContent=f[ffIdx%f.length];el.style.opacity='1'},270);
 }
 function nextFF(){ffIdx++;showFF(null)}
 
@@ -1033,26 +1019,21 @@ function navigate(viewId){
   if(base==='movie'&&param){const m=MOVIES.find(x=>x.id===param)||MOVIES[0];populateMovie(m);base='movie'}
   if(base==='lists-detail'&&param){populateList(param);base='lists-detail'}
   if(base==='review'&&param){populateReview(parseInt(param));base='review'}
-  if(base==='filmlog'){buildFilmLog()}
+  if(base==='filmlog')buildFilmLog();
+  // Stop hero video when leaving home
+  if(base!=='home')pauseHeroVideo();
+  // Stop soundtrack when leaving movie page
+  if(base!=='movie'&&sndPlayer&&sndPlayer.pauseVideo&&sndIsPlaying){sndPlayer.pauseVideo();sndIsPlaying=false;document.getElementById('sndpico').className='ph-bold ph-play';document.getElementById('sndpbtn').classList.remove('playing')}
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const el=document.getElementById('view-'+base);if(el)el.classList.add('active');
-  // Nav highlight
   const navIds=['home','diary','filmlog','community','lists','ai'];
   navIds.forEach(id=>{
-    const a1=document.getElementById('nav-'+id),a2=document.getElementById('fn-'+id);
-    const active=id===base;
-    if(a1)a1.classList.toggle('active-nav',active);
-    if(a2)a2.classList.toggle('active-nav',active);
+    [document.getElementById('n-'+id),document.getElementById('fn-'+id)].forEach(a=>{if(a)a.classList.toggle('an',id===base)});
   });
-  // Back button
-  navStack.push(base);
-  if(navStack.length>10)navStack.shift();
-  updateBackBtn(base);
-  // Stop soundtrack if leaving movie
-  if(base!=='movie'&&sndPlayer&&sndPlayer.pauseVideo&&sndPlaying){sndPlayer.pauseVideo();sndPlaying=false}
+  navStack.push(base);if(navStack.length>12)navStack.shift();
+  updateBack(base);
   window.scrollTo({top:0,behavior:'smooth'});
-  setTimeout(()=>{initObserver();bindCursor()},120);
-  // Theme
+  setTimeout(()=>{initObserver();bindCursor()},100);
   const themes={home:curMovie.theme,ai:{colors:['#7c3aed','#3d8ef8','#af002d','#319197'],speed:.7,behavior:'orbital'},diary:{colors:['#1a0040','#0a1a3a','#1a1a2e'],speed:.4,behavior:'gentle'},community:{colors:['#0d2a0d','#1a1a2e','#2a0d1a'],speed:.45,behavior:'gentle'},lists:{colors:['#1a1a0a','#1a1a2e','#0a1a2e'],speed:.3,behavior:'default'},filmlog:{colors:['#0a1a2e','#1a0a2e','#0a2e1a'],speed:.35,behavior:'default'}};
   setTheme(themes[base]||curMovie.theme);
 }
@@ -1062,12 +1043,12 @@ function navigate(viewId){
 // ══════════════════════════════════════════
 function populateList(id){
   const l=LISTS[id]||LISTS.masterpieces;
-  document.getElementById('ld-cover').style.backgroundImage=`url('${l.cover}')`;
-  document.getElementById('ld-title').textContent=l.title;
-  document.getElementById('ld-meta').textContent=l.meta;
-  document.getElementById('ld-desc').textContent=l.desc;
-  const grid=document.getElementById('ld-grid');grid.innerHTML='';
-  l.movies.forEach(mid=>{const m=MOVIES.find(x=>x.id===mid);if(!m)return;const d=document.createElement('div');d.className='mi';d.innerHTML=`<div class="mp" style="background-image:url('${m.poster}')"></div><h4>${m.title}</h4><p>${m.year}</p>`;d.onclick=()=>navigate('movie&id='+m.id);grid.appendChild(d)});
+  document.getElementById('ldcov').style.backgroundImage=`url('${l.cover}')`;
+  document.getElementById('ldtitle').textContent=l.title;
+  document.getElementById('ldmeta').textContent=l.meta;
+  document.getElementById('lddesc').textContent=l.desc;
+  const g=document.getElementById('ldgrid');g.innerHTML='';
+  l.movies.forEach(mid=>{const m=MOVIES.find(x=>x.id===mid);if(!m)return;const d=document.createElement('div');d.className='mi';d.innerHTML=`<div class="mp" style="background-image:url('${m.poster}')"></div><h4 style="font-size:12px;font-weight:600">${m.title}</h4><p style="font-size:11px;color:var(--mu)">${m.year}</p>`;d.onclick=()=>navigate('movie&id='+m.id);g.appendChild(d)});
 }
 
 // ══════════════════════════════════════════
@@ -1075,22 +1056,21 @@ function populateList(id){
 // ══════════════════════════════════════════
 let logSort='all';
 function buildFilmLog(){
-  const grid=document.getElementById('log-grid');
-  let films=[...LOG_FILMS];
+  const g=document.getElementById('lgrid');
+  let films=[...ALL_LOG];
   if(logSort==='rating')films.sort((a,b)=>b.rating-a.rating);
-  grid.innerHTML='';
+  g.innerHTML='';
   films.forEach(m=>{
-    const d=document.createElement('div');d.className='lg-item';
-    d.innerHTML=`<div class="lg-poster" style="background-image:url('${m.poster}')"><div class="lg-rating">★${m.rating}</div></div><h4>${m.title}</h4><p>${m.year}</p>`;
-    d.onclick=()=>navigate('movie&id='+m.id);
-    grid.appendChild(d);
+    const d=document.createElement('div');d.className='lgi';
+    d.innerHTML=`<div class="lgp" style="background-image:url('${m.poster}')"><div class="lgr">★${m.rating}</div></div><h4>${m.title}</h4><p>${m.year}</p>`;
+    d.onclick=()=>{const mv=MOVIES.find(x=>x.id===m.id);if(mv){populateMovie(mv);navigate('movie')}};
+    g.appendChild(d);
   });
 }
-function filterLog(sort,btn){
-  logSort=sort;
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  buildFilmLog();
+function filterLog(s,btn){
+  logSort=s;
+  document.querySelectorAll('.fb2').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');buildFilmLog();
 }
 
 // ══════════════════════════════════════════
@@ -1098,65 +1078,103 @@ function filterLog(sort,btn){
 // ══════════════════════════════════════════
 function populateReview(idx){
   curReview=REVIEWS[idx]||REVIEWS[0];const r=curReview;
-  document.getElementById('rv-av').style.backgroundImage=`url('${r.avatar}')`;
-  document.getElementById('rv-title').textContent=r.user+"'s Review";
-  document.getElementById('rv-sub').textContent=r.movieTitle+' · '+r.stars+' stars';
-  document.getElementById('rv-poster').style.backgroundImage=`url('${MOVIES.find(m=>m.id===r.movieId)?.poster||''}')`;
-  document.getElementById('rv-text').textContent=r.text;
-  document.getElementById('rv-stars').innerHTML='★'.repeat(Math.floor(r.stars))+(r.stars%1>=0.5?'½':'');
-  liked=false;document.getElementById('like-btn').classList.remove('liked');document.getElementById('like-count').textContent=r.likes;
-  document.getElementById('rv-film-btn').onclick=()=>navigate('movie&id='+r.movieId);
-  const cl=document.getElementById('comments-list');
-  cl.innerHTML=r.comments.map(c=>`<div style="background:rgba(17,17,20,.7);border:1px solid var(--border);border-radius:12px;padding:12px 16px"><strong style="font-size:13px">${c.u}</strong><p class="tb" style="font-size:13px;margin-top:3px;user-select:text">${c.t}</p></div>`).join('');
+  document.getElementById('rvav').style.backgroundImage=`url('${r.avatar}')`;
+  document.getElementById('rvtitle').textContent=r.user+"'s Review";
+  document.getElementById('rvsub').textContent=r.movieTitle+' · '+r.stars+' stars';
+  document.getElementById('rvposter').style.backgroundImage=`url('${MOVIES.find(m=>m.id===r.movieId)?.poster||''}')`;
+  document.getElementById('rvtext').textContent=r.text;
+  document.getElementById('rvstars').textContent='★'.repeat(Math.floor(r.stars))+(r.stars%1>=.5?'½':'');
+  liked=false;document.getElementById('likebtn').classList.remove('liked');document.getElementById('likecnt').textContent=r.likes;
+  document.getElementById('rvfilmbtn').onclick=()=>navigate('movie&id='+r.movieId);
+  const cl=document.getElementById('cmtlist');
+  cl.innerHTML=r.comments.map(c=>`<div style="background:rgba(17,17,20,.7);border:1px solid var(--bd);border-radius:11px;padding:11px 14px"><strong style="font-size:12px">${c.u}</strong><p style="font-size:12px;color:var(--mu);margin-top:2px;user-select:text">${c.t}</p></div>`).join('');
 }
 function toggleLike(){
-  liked=!liked;document.getElementById('like-btn').classList.toggle('liked',liked);
-  const lc=document.getElementById('like-count');lc.textContent=parseInt(lc.textContent)+(liked?1:-1);
+  liked=!liked;document.getElementById('likebtn').classList.toggle('liked',liked);
+  const lc=document.getElementById('likecnt');lc.textContent=parseInt(lc.textContent)+(liked?1:-1);
 }
 function postComment(){
-  const inp=document.getElementById('comment-input');const val=inp.value.trim();if(!val)return;
-  const cl=document.getElementById('comments-list');const d=document.createElement('div');
-  d.style.cssText='background:rgba(17,17,20,.7);border:1px solid var(--border);border-radius:12px;padding:12px 16px;animation:vu .4s';
-  d.innerHTML=`<strong style="font-size:13px">${obData.name||'Rizly'}</strong><p class="tb" style="font-size:13px;margin-top:3px;user-select:text">${val}</p>`;
+  const inp=document.getElementById('cmtinp');const val=inp.value.trim();if(!val)return;
+  const cl=document.getElementById('cmtlist');const d=document.createElement('div');
+  d.style.cssText='background:rgba(17,17,20,.7);border:1px solid var(--bd);border-radius:11px;padding:11px 14px;animation:vu .4s';
+  d.innerHTML=`<strong style="font-size:12px">${obData.name||'Rizly'}</strong><p style="font-size:12px;color:var(--mu);margin-top:2px;user-select:text">${val}</p>`;
   cl.appendChild(d);inp.value='';
 }
 
 // ══════════════════════════════════════════
-// AI ENGINE
+// AI ENGINE — using Puter.js (free Claude API)
 // ══════════════════════════════════════════
 function runAI(){
-  const btn=document.getElementById('ai-btn'),loader=document.getElementById('ai-loader'),result=document.getElementById('ai-result'),orb=document.getElementById('ai-orb');
+  const btn=document.getElementById('aibtn'),loader=document.getElementById('ai-loader'),result=document.getElementById('ai-result'),wrap=document.getElementById('aiwrap');
   btn.style.display='none';result.style.display='none';loader.style.display='block';
-  document.getElementById('ai-wrap').classList.add('ai-ana');analyzing=true;
+  wrap.classList.add('aianalyzin');analyzing=true;
   setTheme({colors:['#7c3aed','#af002d','#319197','#ff7a18','#3d8ef8'],speed:3,behavior:'chaos'});
-  setTimeout(()=>{
-    loader.style.display='none';document.getElementById('ai-wrap').classList.remove('ai-ana');analyzing=false;
+  const genres=(obData.genres||[]).join(', ')||'Drama, Thriller';
+  const prompt=`You are a film recommendation AI for CineLog, a cinema diary app. The user "${obData.name||'Rizly'}" has logged 412 films, rated highly: Oppenheimer (4.4), Interstellar (4.7), Silence of the Lambs (4.8), Parasite (4.6), The Dark Knight (4.9). Their favorite genres are: ${genres}. Their viewing frequency: ${['daily','several times a week','a few times a month','occasionally'][obData.freq||1]}.
+
+Based on this profile, recommend ONE film they haven't seen yet. Reply ONLY with valid JSON, no markdown, no explanation:
+{"title":"Film Title","year":"Year","match":98,"reason":"One compelling sentence explaining why this film matches their taste exactly.","director":"Director Name"}`;
+  puter.ai.chat(prompt,{model:'claude-sonnet-4-6'}).then(res=>{
+    loader.style.display='none';wrap.classList.remove('aianalyzin');analyzing=false;
+    try{
+      const text=res.message.content[0].text.replace(/```json|```/g,'').trim();
+      const rec=JSON.parse(text);
+      document.getElementById('ai-rec-title').textContent=rec.title+' ('+rec.year+')';
+      document.getElementById('ai-rec-text').textContent=rec.reason;
+      document.querySelector('.mbadge').textContent=rec.match+'% Match';
+    }catch(e){
+      document.getElementById('ai-rec-title').textContent='The Dark Knight (2008)';
+      document.getElementById('ai-rec-text').textContent='Based on your love of Nolan\'s work and psychological complexity, this is the crown jewel.';
+    }
     result.style.display='block';result.style.animation='vu .6s cubic-bezier(.16,1,.3,1)';
     setTheme({colors:['#7c3aed','#3d8ef8','#319197'],speed:.7,behavior:'orbital'});
-  },2800);
+  }).catch(()=>{
+    loader.style.display='none';wrap.classList.remove('aianalyzin');analyzing=false;
+    document.getElementById('ai-rec-text').textContent='Based on your profile, we recommend exploring more Nolan and Bong Joon Ho films.';
+    result.style.display='block';
+    setTheme({colors:['#7c3aed','#3d8ef8','#319197'],speed:.7,behavior:'orbital'});
+  });
 }
+
 function analyzeStyle(){
   const loader=document.getElementById('style-loader'),result=document.getElementById('style-result');
   loader.style.display='block';result.style.display='none';
-  setTimeout(()=>{
+  const genres=(obData.genres||[]).join(', ')||'Drama, Thriller';
+  const prompt=`You are CineLog's style analysis AI. Analyze this user's profile:
+Name: ${obData.name||'Rizly'}. Logged 412 films. Top-rated: Oppenheimer 4.4, Interstellar 4.7, Silence of the Lambs 4.8, Parasite 4.6, The Dark Knight 4.9. Favorite genres: ${genres}. Watches films ${['daily','several times a week','a few times a month','occasionally'][obData.freq||1]}.
+
+Generate a short, personalized cinematic identity description (2 sentences max) and 3-5 personality tags (creative labels like "The Nolan Loyalist", "Psychological Voyeur", etc). Reply ONLY in JSON:
+{"description":"...","tags":["Tag1","Tag2","Tag3"]}`;
+  puter.ai.chat(prompt,{model:'claude-sonnet-4-6'}).then(res=>{
     loader.style.display='none';result.style.display='block';
-    const genres=obData.genres||[];
-    const gStr=genres.length?` and your interest in ${genres.slice(0,2).join(' and ')} films`:'';
-    document.getElementById('style-desc').textContent=`Based on your 412 logged films — heavy emphasis on Christopher Nolan (×3), psychological thrillers, and cerebral sci-fi epics${gStr} — here's your Cinematic Identity:`;
-    document.getElementById('style-tags-wrap').innerHTML=`<span class="stag tp-tag"><i class="ph-fill ph-sparkle"></i> The Nolan Loyalist</span><span class="stag tp-tag"><i class="ph-fill ph-eye"></i> Psychological Voyeur</span><span class="stag ts-tag"><i class="ph ph-planet"></i> Cosmic Dreamer</span><span class="stag ts-tag"><i class="ph ph-mask-happy"></i> Social Satirist</span><span class="stag ts-tag"><i class="ph ph-graduation-cap"></i> Arthouse Curious</span>`;
-    document.getElementById('style-tag').innerHTML='<i class="ph-fill ph-sparkle"></i> The Nolan Loyalist · Psychological Voyeur';
-  },2200);
+    try{
+      const text=res.message.content[0].text.replace(/```json|```/g,'').trim();
+      const data=JSON.parse(text);
+      document.getElementById('style-desc').textContent=data.description;
+      document.getElementById('style-tags').innerHTML=data.tags.map((t,i)=>`<span class="stag ${i<2?'tgp':'tgs'}">${t}</span>`).join('');
+      document.getElementById('styletag').textContent='✦ '+data.tags.slice(0,2).join(' · ');
+    }catch(e){
+      document.getElementById('style-desc').textContent='Based on your 412 logged films — with a heavy emphasis on Christopher Nolan, psychological thrillers, and cerebral sci-fi — here\'s your Cinematic Identity:';
+      document.getElementById('style-tags').innerHTML='<span class="stag tgp">The Nolan Loyalist</span><span class="stag tgp">Psychological Voyeur</span><span class="stag tgs">Cosmic Dreamer</span><span class="stag tgs">Social Satirist</span>';
+    }
+  }).catch(()=>{
+    loader.style.display='none';result.style.display='block';
+    document.getElementById('style-desc').textContent='Analysis complete. Your taste profile skews heavily auteur-driven.';
+    document.getElementById('style-tags').innerHTML='<span class="stag tgp">The Nolan Loyalist</span><span class="stag tgp">Psychological Voyeur</span><span class="stag tgs">Cosmic Dreamer</span>';
+  });
 }
 
 // ══════════════════════════════════════════
 // PROFILE
 // ══════════════════════════════════════════
 function saveProfile(){
-  const n=document.getElementById('edit-name').value||'Rizly';
-  const b=document.getElementById('edit-bio').value||'Film Student at UNPAD';
-  document.getElementById('prof-name').textContent=n;
-  document.getElementById('prof-bio').textContent=b;
+  const n=document.getElementById('editname').value||'Rizly';
+  const b=document.getElementById('editbio').value||'Film Student at UNPAD';
+  const l=document.getElementById('editloc').value||'Bandung, Indonesia';
+  document.getElementById('profname').textContent=n;
+  document.getElementById('profmeta').textContent=l+' · '+b;
   obData.name=n;closeM('profile-modal');
+  localStorage.setItem('cl_name',n);
 }
 
 // ══════════════════════════════════════════
@@ -1166,114 +1184,81 @@ function openLogModal(){openM('log-modal')}
 function openM(id){document.getElementById(id).classList.add('open');document.body.classList.add('no-scroll')}
 function closeM(id){document.getElementById(id).classList.remove('open');document.body.classList.remove('no-scroll')}
 
-// Log stars
-document.querySelectorAll('#log-stars i').forEach(s=>{
-  s.addEventListener('mouseover',()=>litStars(s.dataset.v));
-  s.addEventListener('mouseout',()=>litStars(logRating));
-  s.addEventListener('click',()=>{logRating=s.dataset.v;litStars(logRating)});
+document.querySelectorAll('#logstars i').forEach(s=>{
+  s.addEventListener('mouseover',()=>litSt(s.dataset.v));
+  s.addEventListener('mouseout',()=>litSt(logRating));
+  s.addEventListener('click',()=>{logRating=s.dataset.v;litSt(logRating)});
 });
-function litStars(v){document.querySelectorAll('#log-stars i').forEach(s=>s.classList.toggle('lit',s.dataset.v<=v))}
+function litSt(v){document.querySelectorAll('#logstars i').forEach(s=>s.classList.toggle('lit',s.dataset.v<=v))}
 
 // ══════════════════════════════════════════
 // SCROLL REVEAL
 // ══════════════════════════════════════════
 function initObserver(){
-  const obs=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('active')}),{threshold:.1});
-  document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+  const obs=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('active')}),{threshold:.08});
+  document.querySelectorAll('.rev').forEach(el=>obs.observe(el));
 }
 
 // ══════════════════════════════════════════
 // ONBOARDING
 // ══════════════════════════════════════════
-const OB_STEPS = [
-  {
-    render:()=>`<h2 style="font-family:var(--serif);font-size:28px;font-weight:700;margin-bottom:8px">Welcome to CineLog.</h2><p class="tb" style="margin-bottom:20px">Your personal cinema universe. Let's set up your profile.</p><div class="frow"><label>What's your name?</label><input class="finp" id="ob-name" placeholder="e.g. Rizly" value="${obData.name||''}"></div><div class="frow"><label>Your city</label><input class="finp" id="ob-city" placeholder="e.g. Bandung" value="${obData.city||''}"></div>`,
-    save:()=>{obData.name=document.getElementById('ob-name').value||'Cinephile';obData.city=document.getElementById('ob-city').value||''}
-  },
-  {
-    render:()=>`<h2 style="font-family:var(--serif);font-size:26px;font-weight:700;margin-bottom:8px">What genres do you love?</h2><p class="tb" style="margin-bottom:16px">Pick your favorites — this shapes your AI recommendations.</p><div class="genre-grid">${['Thriller','Sci-Fi','Drama','Horror','Comedy','Romance','Action','Documentary','Animation','Arthouse','Crime','Fantasy'].map(g=>`<button class="genre-btn${(obData.genres||[]).includes(g)?' sel':''}" onclick="toggleGenre(this,'${g}')">${g}</button>`).join('')}</div>`,
-    save:()=>{}
-  },
-  {
-    render:()=>`<h2 style="font-family:var(--serif);font-size:26px;font-weight:700;margin-bottom:8px">How often do you watch films?</h2><p class="tb" style="margin-bottom:16px">Helps us calibrate your Cinematic Engine.</p><div style="display:flex;flex-direction:column;gap:10px">
-      ${['Daily — I live at the cinema','Several times a week','A few times a month','Occasionally'].map((o,i)=>`<button class="genre-btn${obData.freq===i?' sel':''}" style="text-align:left;padding:12px 16px" onclick="selectFreq(${i},this)">${o}</button>`).join('')}</div>`,
-    save:()=>{}
-  }
+const OB=[
+  {render:()=>`<h2 style="font-family:var(--sr);font-size:26px;font-weight:700;margin-bottom:7px">Welcome to CineLog.</h2><p class="tb" style="font-size:14px;margin-bottom:18px">Your personal cinema universe. Let's set up your profile.</p><div style="margin-bottom:14px"><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your name</label><input class="finp" id="ob-name" placeholder="e.g. Rizly" value="${obData.name||''}"></div><div><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your city</label><input class="finp" id="ob-city" placeholder="e.g. Bandung" value="${obData.city||''}"></div>`,
+   save:()=>{obData.name=document.getElementById('ob-name').value||'Cinephile';obData.city=document.getElementById('ob-city').value}},
+  {render:()=>`<h2 style="font-family:var(--sr);font-size:24px;font-weight:700;margin-bottom:7px">What genres do you love?</h2><p class="tb" style="font-size:13px;margin-bottom:14px">Pick your favorites — this shapes your AI recommendations.</p><div class="ggrid">${['Thriller','Sci-Fi','Drama','Horror','Comedy','Romance','Action','Documentary','Animation','Arthouse','Crime','Fantasy'].map(g=>`<button class="gbtn${(obData.genres||[]).includes(g)?' sel':''}" onclick="toggleGenre(this,'${g}')">${g}</button>`).join('')}</div>`,
+   save:()=>{}},
+  {render:()=>`<h2 style="font-family:var(--sr);font-size:24px;font-weight:700;margin-bottom:7px">How often do you watch?</h2><p class="tb" style="font-size:13px;margin-bottom:14px">Helps calibrate your Cinematic Engine.</p><div style="display:flex;flex-direction:column;gap:8px">${['Daily — I live at the cinema','Several times a week','A few times a month','Occasionally'].map((o,i)=>`<button class="gbtn${obData.freq===i?' sel':''}" style="text-align:left;padding:11px 15px;border-radius:12px" onclick="selFreq(${i},this)">${o}</button>`).join('')}</div>`,
+   save:()=>{}}
 ];
-function toggleGenre(btn,g){
-  if(!obData.genres)obData.genres=[];
-  const idx=obData.genres.indexOf(g);
-  if(idx>-1){obData.genres.splice(idx,1);btn.classList.remove('sel')}
-  else{obData.genres.push(g);btn.classList.add('sel')}
-}
-function selectFreq(i,btn){
-  obData.freq=i;
-  document.querySelectorAll('.ob-body .genre-btn').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-}
-function renderObStep(){
-  document.getElementById('ob-body').innerHTML=OB_STEPS[obStep].render();
-  document.querySelectorAll('.ob-step').forEach((s,i)=>{s.classList.toggle('active',i===obStep);s.classList.toggle('done',i<obStep)});
-  document.getElementById('ob-next').innerHTML=obStep<OB_STEPS.length-1?'Continue <i class="ph-bold ph-arrow-right"></i>':'Start Logging <i class="ph-bold ph-film-strip"></i>';
+function toggleGenre(btn,g){if(!obData.genres)obData.genres=[];const i=obData.genres.indexOf(g);if(i>-1){obData.genres.splice(i,1);btn.classList.remove('sel')}else{obData.genres.push(g);btn.classList.add('sel')}}
+function selFreq(i,btn){obData.freq=i;document.querySelectorAll('.obbody .gbtn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel')}
+function renderOb(){
+  document.getElementById('obbody').innerHTML=OB[obStep].render();
+  document.querySelectorAll('.obs').forEach((s,i)=>{s.classList.toggle('active',i===obStep);s.classList.toggle('done',i<obStep)});
+  document.getElementById('obnext').innerHTML=obStep<OB.length-1?'Continue <i class="ph-bold ph-arrow-right"></i>':'Start Logging <i class="ph-bold ph-film-strip"></i>';
   setTimeout(bindCursor,50);
 }
 function obNext(){
-  OB_STEPS[obStep].save();
-  obStep++;
-  if(obStep>=OB_STEPS.length){
-    finishOnboarding();return;
-  }
-  renderObStep();
+  OB[obStep].save();obStep++;
+  if(obStep>=OB.length){finishOb();return}renderOb();
 }
-function finishOnboarding(){
+function finishOb(){
   localStorage.setItem('cl_onboarded','1');
   localStorage.setItem('cl_name',obData.name||'Rizly');
   localStorage.setItem('cl_genres',JSON.stringify(obData.genres||[]));
-  document.getElementById('prof-name').textContent=obData.name||'Rizly';
-  document.getElementById('edit-name').value=obData.name||'Rizly';
-  const ob=document.getElementById('onboarding');
-  ob.style.opacity='0';ob.style.transition='opacity .6s';
-  setTimeout(()=>{ob.style.display='none'},600);
+  document.getElementById('profname').textContent=obData.name||'Rizly';
+  document.getElementById('editname').value=obData.name||'Rizly';
+  document.getElementById('profmeta').textContent=(obData.city||'Bandung, Indonesia')+' · Film Student at UNPAD';
+  const ob=document.getElementById('ob');
+  ob.style.transition='opacity .6s';ob.style.opacity='0';
+  setTimeout(()=>ob.style.display='none',600);
 }
-function initOnboarding(){
-  const done=localStorage.getItem('cl_onboarded');
-  if(done){
+function initOb(){
+  if(localStorage.getItem('cl_onboarded')){
     obData.name=localStorage.getItem('cl_name')||'Rizly';
     obData.genres=JSON.parse(localStorage.getItem('cl_genres')||'[]');
-    document.getElementById('prof-name').textContent=obData.name;
-    document.getElementById('edit-name').value=obData.name;
-    document.getElementById('onboarding').style.display='none';
-  } else {
-    renderObStep();
-  }
+    document.getElementById('profname').textContent=obData.name;
+    document.getElementById('editname').value=obData.name;
+    document.getElementById('ob').style.display='none';
+  }else{renderOb()}
 }
 
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',()=>{
-  buildCarousel();
-  applyHero(MOVIES[0]);
-  initObserver();
-  bindCursor();
-  initOnboarding();
+  buildCarousel();applyHero(MOVIES[0]);initObserver();bindCursor();initOb();
   setInterval(bindCursor,2500);
-  // Hero fade transition setup
-  const fade=document.getElementById('hero-fade');
+  const fade=document.getElementById('hfade');
   if(fade){fade.style.transition='opacity .5s';fade.style.pointerEvents='none'}
-  const cnt=document.getElementById('hero-cnt');
-  if(cnt)cnt.style.transition='opacity .38s,transform .38s';
 });
 
-// Expose globals
 window.navigate=navigate;window.toggleFab=toggleFab;window.openLogModal=openLogModal;
-window.openM=openM;window.closeM=closeM;window.goToHeroMovie=goToHeroMovie;
-window.goBack=goBack;window.runAI=runAI;window.analyzeStyle=analyzeStyle;
-window.toggleMute=toggleMute;window.togglePlay=togglePlay;window.sndTogglePlay=sndTogglePlay;
-window.sndToggleMute=sndToggleMute;window.toggleLike=toggleLike;window.postComment=postComment;
-window.nextFF=nextFF;window.saveProfile=saveProfile;window.filterLog=filterLog;
-window.switchVideo=switchVideo;window.obNext=obNext;window.toggleGenre=toggleGenre;
-window.selectFreq=selectFreq;window.MOVIES=MOVIES;
+window.openM=openM;window.closeM=closeM;window.goToHeroMovie=goToHeroMovie;window.goBack=goBack;
+window.runAI=runAI;window.analyzeStyle=analyzeStyle;window.toggleMute=toggleMute;window.togglePlay=togglePlay;
+window.sndPlay=sndPlay;window.sndMute=sndMute;window.toggleLike=toggleLike;window.postComment=postComment;
+window.nextFF=nextFF;window.saveProfile=saveProfile;window.filterLog=filterLog;window.switchVideo=switchVideo;
+window.obNext=obNext;window.toggleGenre=toggleGenre;window.selFreq=selFreq;window.MOVIES=MOVIES;
 </script>
 </body>
 </html>
