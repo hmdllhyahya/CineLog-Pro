@@ -201,7 +201,7 @@ body.nsc .nfab{opacity:1;transform:translateX(0) scale(1);pointer-events:all}
 
 /* ── LISTS ── */
 .lgrd{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
-@media(max-width:540px){.lgrd{grid-column:1fr}}
+@media(max-width:540px){.lgrd{grid-template-columns:1fr}}
 .lcard{cursor:none;transition:transform .3s}
 .lcard:hover{transform:translateY(-7px)}
 .lcov{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;border-radius:15px;overflow:hidden;aspect-ratio:1;box-shadow:0 14px 36px rgba(0,0,0,.5);margin-bottom:13px;border:1px solid var(--bd)}
@@ -309,6 +309,127 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
 .spin{animation:sp 1.2s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 #sndytw{position:fixed;left:-9999px;width:1px;height:1px}
+/* ── MOBILE RESPONSIVE PACK ── */
+@media (max-width: 900px){
+  html,body{width:100%;overflow-x:hidden}
+  body{cursor:auto;-webkit-tap-highlight-color:transparent}
+  a,button,.pc2,.ti,.fi,.fcard,.lcard,.bc,.mi,.lgi,.gbtn,.fb2,.vtab,.still,.sndbtn,.abt{cursor:pointer}
+  #cring,#cdot{display:none!important}
+
+  #tnav{padding:10px 14px;gap:8px}
+  #tnav::before{opacity:1}
+  .nlogo{font-size:19px}
+  #backbtn{display:none!important}
+  .nlinks{display:none!important}
+  .logq{display:none!important}
+  #tnav.scrolled .nlinks,#tnav.scrolled .logq{opacity:1;pointer-events:none}
+
+  .nfab{top:10px;right:12px;opacity:1;transform:none;pointer-events:all;width:42px;height:42px;border-radius:21px;font-size:17px}
+  .fabdd{top:58px;right:12px;left:12px;min-width:0;max-height:70svh;overflow:auto}
+  .fabdd a{padding:12px 14px;font-size:14px}
+
+  .view{padding-bottom:92px}
+  .ph{padding:78px 16px 24px}
+  .pc{padding:24px 16px}
+  .tb{font-size:14px;line-height:1.6}
+  .tp{font-size:clamp(24px,9vw,34px)}
+  .ts{font-size:clamp(19px,6.5vw,24px)}
+
+  .hw{height:calc(var(--app-vh, 1vh) * 100);min-height:560px;padding:0 16px 132px}
+  #ytw iframe{width:220vw;height:100%}
+  .hcnt{max-width:100%}
+  .hcnt .th{font-size:clamp(34px,12vw,52px);line-height:1.04}
+  .hcnt .tb{max-width:95%}
+  .vtabs{gap:6px;margin-top:10px}
+  .vtab{padding:6px 11px;font-size:11px}
+  .hvctl{right:16px;bottom:108px}
+  .vbtn{width:38px;height:38px}
+
+  .clbl{padding-left:16px;font-size:10px}
+  .srow{padding:0 16px 12px;gap:10px}
+  .pc2{flex-basis:118px;border-radius:11px}
+
+  .bsec{padding:30px 16px}
+  .bgrid{gap:10px}
+  .bc{padding:22px 18px;border-radius:18px;min-height:192px}
+  .bc i{font-size:34px;margin-bottom:10px}
+  .bc h3{font-size:17px}
+
+  .tsec{padding:10px 16px 34px}
+  .tgrid{gap:11px}
+  .tiposter{border-radius:11px}
+
+  .profhdr{gap:14px}
+  .avwrap{width:76px}
+  .av{width:76px;height:76px}
+  .avedit{width:24px;height:24px}
+  .statrow{gap:14px}
+  .stat h5{font-size:22px}
+  .scard{padding:20px;border-radius:17px;margin-top:26px}
+  .dlist{margin-top:14px}
+  .dc{padding:13px;border-radius:14px;gap:12px}
+  .dt{width:58px;height:88px}
+
+  .lfil{gap:6px;overflow:auto;white-space:nowrap;flex-wrap:nowrap;padding-bottom:2px}
+  .fb2{flex:0 0 auto}
+  .lgrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+
+  .cgrid{grid-template-columns:1fr;gap:12px;margin-bottom:18px}
+  .cpanel{padding:14px;border-radius:16px}
+  .fcard{padding:13px;gap:10px;align-items:flex-start;border-radius:16px}
+  .fav2{width:36px;height:36px;border-radius:18px}
+  .fth{width:52px;height:78px}
+  .fm{font-size:13px}
+  .fst{font-size:12px}
+
+  .rvd{padding:16px;border-radius:16px}
+  .rvacts{flex-wrap:wrap;gap:8px}
+  .abt{padding:7px 10px;font-size:12px}
+
+  .lgrd{grid-template-columns:1fr;gap:14px}
+  .nlbtn{min-height:118px}
+  .ldcov{width:112px;height:112px}
+  .mosaic{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+
+  .aiwrap{min-height:66vh;padding-top:4px}
+  .aiorb{width:126px;height:126px;margin-bottom:20px}
+  .aigbtn{padding:13px 20px;font-size:15px;gap:8px}
+  #ai-result{margin-top:20px;padding:16px;border-radius:16px}
+  .airinn{gap:12px}
+  .airinn img{width:92px}
+
+  .mdwrap{padding-top:70px}
+  .mdart{height:46vh}
+  .mdinn{padding:22px 16px}
+  .mdflex{display:grid;grid-template-columns:1fr;gap:16px}
+  .mdleft{width:100%;max-width:250px;margin:0 auto}
+  .mdinfo{min-width:0}
+  .mdmeta{font-size:13px;margin:9px 0 13px}
+  .qb{padding:12px 14px}
+  .ffcard,.whycard{padding:14px 16px;border-radius:14px}
+  .stgrid{gap:6px}
+  .sndp{padding:10px 12px}
+
+  .mov{align-items:flex-end}
+  .mcard{width:100%;max-width:none;border-bottom-left-radius:0;border-bottom-right-radius:0;border-top-left-radius:18px;border-top-right-radius:18px;padding:18px;max-height:78svh}
+  .mhdr{margin-bottom:14px}
+  .mhdr h2{font-size:18px}
+  textarea.finp{height:112px}
+
+  #ob{padding:14px}
+  .obcard{width:100%;max-width:460px}
+  .oblogo{font-size:27px}
+  .obbody{min-height:190px}
+}
+
+@media (max-width: 560px){
+  .tgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mosaic{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .btn{padding:10px 16px;font-size:13px}
+  .sm{padding:7px 12px;font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -1356,9 +1477,16 @@ const __sndMute=sndMute;sndMute=function(){const a=document.getElementById('snd-
 
 window.searchLogMovie=searchLogMovie;window.selectLogMovie=selectLogMovie;window.saveLog=saveLog;window.createList=createList;window.searchConnectPlus=searchConnectPlus;window.addFriend=addFriend;
 
+function setMobileViewportHeight(){
+  const vh=window.innerHeight*0.01;
+  document.documentElement.style.setProperty('--app-vh',vh+'px');
+}
 // INIT
 // ══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',async()=>{
+  setMobileViewportHeight();
+  window.addEventListener('resize',setMobileViewportHeight,{passive:true});
+  window.addEventListener('orientationchange',setMobileViewportHeight,{passive:true});
   ensureEnhancements();
   buildCarousel();applyHero(MOVIES[0]);initObserver();bindCursor();initOb();
   await fetchTrending();
@@ -1377,6 +1505,11 @@ window.obNext=obNext;window.toggleGenre=toggleGenre;window.selFreq=selFreq;windo
 </script>
 </body>
 </html>
+
+
+
+
+
 
 
 
