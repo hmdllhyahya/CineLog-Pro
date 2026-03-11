@@ -1910,6 +1910,7 @@ saveProfile=function(){
     syncProfileIdentityUI();
     renderProfile();
     saveState();
+    if(CLOUD.enabled)syncCloudIdentity(un||n);
     closeM('profile-modal');
   };
   if(f){const rd=new FileReader();rd.onload=()=>apply(String(rd.result||''));rd.readAsDataURL(f);return}
