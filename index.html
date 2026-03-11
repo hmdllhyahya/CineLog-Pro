@@ -302,6 +302,14 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
 .gbtn{padding:9px 7px;border-radius:12px;border:1px solid var(--bd);font-size:12px;font-weight:500;color:var(--mu);background:rgba(255,255,255,.04);transition:all .2s;text-align:center;cursor:none}
 .gbtn.sel{border-color:var(--ac);background:rgba(61,142,248,.14);color:var(--text)}
 
+/* ── AUTH PAGE ── */
+#auth-page{position:fixed;inset:0;z-index:2100;background:rgba(7,7,10,.98);display:none;align-items:center;justify-content:center;padding:16px}
+#auth-page.open{display:flex}
+.auth-card{width:100%;max-width:460px;background:rgba(17,17,20,.86);border:1px solid var(--bd);border-radius:18px;padding:24px}
+.auth-actions{display:grid;gap:8px;margin-top:12px}
+.auth-hint{font-size:12px;color:var(--mu);line-height:1.5;margin-top:8px}
+#auth-msg{font-size:12px;color:var(--ac);margin-top:8px;min-height:18px}
+
 /* ── MISC ── */
 .no-scroll{overflow:hidden}
 .rev{opacity:0;transform:translateY(34px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
@@ -451,6 +459,24 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
   </div>
 </div>
 
+
+<!-- ══ AUTH ══ -->
+<div id="auth-page">
+  <div class="auth-card">
+    <div class="oblogo" style="font-size:28px;justify-content:flex-start"><i class="ph-fill ph-film-strip"></i> CineLog Login</div>
+    <p class="tb" style="font-size:13px;margin-bottom:14px">Masuk dengan username/ID + password. Data akan sinkron ke Supabase.</p>
+    <div class="frow"><label>Username / ID / Email</label><input id="auth-identifier" class="finp" placeholder="contoh: rizly atau rizly@mail.com"></div>
+    <div class="frow"><label>Password</label><input id="auth-password" class="finp" type="password" placeholder="••••••••"></div>
+    <div class="auth-actions">
+      <button class="btn btnp" style="justify-content:center" onclick="authLogin()"><i class="ph-bold ph-sign-in"></i> Login</button>
+      <button class="btn btng" style="justify-content:center" onclick="authSetPassword()"><i class="ph-bold ph-key"></i> Buat Password (akun profil lama)</button>
+      <button class="btn btna" style="justify-content:center" onclick="authGuest()"><i class="ph-bold ph-user"></i> Lanjut sebagai Guest</button>
+    </div>
+    <p class="auth-hint">Untuk akun profil lama yang belum punya password: login dulu sebagai Guest, isi username/id yang dipakai profile Anda, lalu klik <b>Buat Password</b>.</p>
+    <p id="auth-msg"></p>
+  </div>
+</div>
+
 <!-- ══ NAV ══ -->
 <nav id="tnav">
   <div class="nlogo" onclick="navigate('home')"><i class="ph-fill ph-film-strip"></i> CineLog</div>
@@ -464,6 +490,7 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
     <a onclick="navigate('ai')" id="n-ai">AI Engine</a>
   </div>
   <button class="logq" onclick="openLogModal()"><i class="ph-bold ph-plus"></i> Log+</button>
+  <button class="btn btng sm" id="logoutbtn" style="margin-left:8px" onclick="authLogout()"><i class="ph-bold ph-sign-out"></i> Logout</button>
 </nav>
 <button class="nfab" id="nfab" onclick="toggleFab()"><i class="ph-bold ph-list" id="fabicon"></i></button>
 <div class="fabdd" id="fabdd">
@@ -474,6 +501,7 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
   <a onclick="navigate('lists')" id="fn-lists">Lists</a>
   <a onclick="navigate('ai')" id="fn-ai">AI Engine</a>
   <a onclick="openLogModal()" style="color:var(--ac)"><i class="ph-bold ph-plus"></i> Log Film</a>
+  <a onclick="authLogout()"><i class="ph-bold ph-sign-out"></i> Logout</a>
 </div>
 
 <div id="app">
@@ -763,6 +791,8 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
   <div style="display:flex;gap:7px"><button class="btn btnp" style="flex:1;justify-content:center" onclick="saveEditList()"><i class="ph-bold ph-check"></i> Save</button><button class="btn btng" style="color:#ef4444;border-color:rgba(239,68,68,.25)" onclick="deleteCurrentList()"><i class="ph-bold ph-trash"></i></button></div></div>
 </div>
 
+<script src="assets/js/config.js"></script>
+<script src="assets/js/supabase-bootstrap.js"></script>
 <script>
 // ══════════════════════════════════════════
 // CONFIG
@@ -1492,34 +1522,85 @@ const CLOUD={enabled:false,ready:false,uid:'',client:null,lastError:''};
 let cloudSaveTimer=null;
 
 function cloudAvailable(){return !!(window.supabase && supabase.createClient)}
+function authIdentifierToEmail(v){const t=String(v||'').trim().toLowerCase();if(!t)return'';if(t.includes('@'))return t;if(t.startsWith('id:'))return t.slice(3)+'@cinelog.app';return t.replace(/\s+/g,'_')+'@cinelog.app'}
+function authMsg(t){const el=document.getElementById('auth-msg');if(el)el.textContent=t||''}
+function showAuthPage(msg){const ap=document.getElementById('auth-page');if(ap)ap.classList.add('open');authMsg(msg||'')}
+function hideAuthPage(){const ap=document.getElementById('auth-page');if(ap)ap.classList.remove('open');authMsg('')}
+function applyAuthUI(){const b=document.getElementById('logoutbtn');if(b)b.style.display=CLOUD.enabled?'inline-flex':'none'}
+
+async function refreshCloudUser(){
+  if(!CLOUD.client)return false;
+  const gu=await CLOUD.client.auth.getUser();
+  const usr=gu&&gu.data?gu.data.user:null;
+  if(!usr){CLOUD.enabled=false;CLOUD.uid='';applyAuthUI();return false}
+  CLOUD.uid=usr.id;CLOUD.enabled=true;applyAuthUI();return true;
+}
 
 async function initCloudSession(){
-  if(!cloudAvailable()){CLOUD.lastError='Supabase SDK not loaded';return false}
+  if(!cloudAvailable()){CLOUD.lastError='Supabase SDK not loaded';showAuthPage(CLOUD.lastError);return false}
   try{
-    // Read credentials from config.js (window.CINELOG_CONFIG)
     const _cfg=window.CINELOG_CONFIG||{};
     const _url=_cfg.SUPABASE_URL||'';
     const _key=_cfg.SUPABASE_ANON_KEY||'';
-    if(!_url||!_key){CLOUD.lastError='Supabase config not set in config.js';return false}
+    if(!_url||!_key){CLOUD.lastError='Supabase config belum diisi (SUPABASE_URL / SUPABASE_ANON_KEY).';showAuthPage(CLOUD.lastError);return false}
     CLOUD.client=supabase.createClient(_url,_key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-    let session=(await CLOUD.client.auth.getSession()).data.session;
-    if(!session){
-      const sign=await CLOUD.client.auth.signInAnonymously();
-      if(sign.error){CLOUD.lastError=sign.error.message||'Anonymous sign-in disabled';return false}
-      session=sign.data.session||null;
-    }
-    const usr=(await CLOUD.client.auth.getUser()).data.user;
-    if(!usr){CLOUD.lastError='No Supabase user';return false}
-    CLOUD.uid=usr.id;
     const probe=await CLOUD.client.from('cl_profiles').select('user_id').limit(1);
-    if(probe.error){CLOUD.lastError='Table cl_profiles not ready';return false}
-    CLOUD.enabled=true;CLOUD.ready=true;
-    return true;
+    if(probe.error){CLOUD.lastError='Table cl_profiles not ready';showAuthPage(CLOUD.lastError);return false}
+    CLOUD.ready=true;
+    await refreshCloudUser();
+    if(!CLOUD.enabled)showAuthPage('Silakan login atau lanjut sebagai guest.');
+    return CLOUD.enabled;
   }catch(e){
     CLOUD.lastError=(e&&e.message)||'Cloud init failed';
     CLOUD.enabled=false;CLOUD.ready=false;
+    showAuthPage(CLOUD.lastError);
     return false;
   }
+}
+
+async function authGuest(){
+  if(!CLOUD.client){showAuthPage('Supabase belum siap. Cek config.');return}
+  const sign=await CLOUD.client.auth.signInAnonymously();
+  if(sign.error){authMsg(sign.error.message||'Gagal guest login');return}
+  await refreshCloudUser();
+  hideAuthPage();
+  await cloudPullState();
+  renderProfile();renderLists();renderCommunity();buildFilmLog();renderRecent();
+}
+
+async function authLogin(){
+  if(!CLOUD.client){showAuthPage('Supabase belum siap. Cek config.');return}
+  const id=(document.getElementById('auth-identifier')||{}).value||'';
+  const pw=(document.getElementById('auth-password')||{}).value||'';
+  if(!id.trim()||!pw){authMsg('Username/ID dan password wajib diisi.');return}
+  const email=authIdentifierToEmail(id);
+  const res=await CLOUD.client.auth.signInWithPassword({email,password:pw});
+  if(res.error){authMsg(res.error.message||'Login gagal');return}
+  await refreshCloudUser();
+  hideAuthPage();
+  await cloudPullState();
+  renderProfile();renderLists();renderCommunity();buildFilmLog();renderRecent();
+}
+
+async function authSetPassword(){
+  if(!CLOUD.client){showAuthPage('Supabase belum siap. Cek config.');return}
+  const id=(document.getElementById('auth-identifier')||{}).value||profileUsername()||'';
+  const pw=(document.getElementById('auth-password')||{}).value||'';
+  if(!id.trim()||!pw){authMsg('Isi username/ID dan password baru.');return}
+  const ok=await refreshCloudUser();
+  if(!ok){authMsg('Login dulu sebagai guest atau user sebelum buat password.');return}
+  const email=authIdentifierToEmail(id);
+  const up=await CLOUD.client.auth.updateUser({email,password:pw});
+  if(up.error){authMsg(up.error.message||'Gagal membuat password');return}
+  localStorage.setItem(STORE.username,String(id).trim().toLowerCase());
+  authMsg('Password berhasil dibuat. Selanjutnya login pakai username/ID + password.');
+}
+
+async function authLogout(){
+  if(!CLOUD.client)return;
+  await CLOUD.client.auth.signOut();
+  CLOUD.enabled=false;CLOUD.uid='';applyAuthUI();
+  showAuthPage('Anda sudah logout.');
 }
 
 async function cloudPullState(){
@@ -1876,7 +1957,7 @@ const __loadSnd=loadSnd;loadSnd=async function(m){__loadSnd(m);sndPreview='';if(
 const __sndPlay=sndPlay;sndPlay=function(){const a=document.getElementById('snd-audio');if(sndPreview&&a&&(!curMovie.sndId||!sndPlayer||!sndPlayer.playVideo)){if(!a.src)a.src=sndPreview;if(sndIsPlaying){a.pause();sndIsPlaying=false;document.getElementById('sndpico').className='ph-bold ph-play';document.getElementById('sndpbtn').classList.remove('playing')}else{a.play().catch(()=>{});sndIsPlaying=true;document.getElementById('sndpico').className='ph-bold ph-pause';document.getElementById('sndpbtn').classList.add('playing')}return}__sndPlay()}
 const __sndMute=sndMute;sndMute=function(){const a=document.getElementById('snd-audio');if(sndPreview&&a&&(!curMovie.sndId||!sndPlayer)){a.muted=!a.muted;document.getElementById('sndmico').className=a.muted?'ph-bold ph-speaker-slash':'ph-bold ph-speaker-high';return}__sndMute()}
 
-window.searchLogMovie=searchLogMovie;window.selectLogMovie=selectLogMovie;window.saveLog=saveLog;window.createList=createList;window.searchConnectPlus=searchConnectPlus;window.addFriend=addFriend;
+window.searchLogMovie=searchLogMovie;window.selectLogMovie=selectLogMovie;window.saveLog=saveLog;window.createList=createList;window.searchConnectPlus=searchConnectPlus;window.addFriend=addFriend;window.authGuest=authGuest;window.authLogin=authLogin;window.authSetPassword=authSetPassword;window.authLogout=authLogout;
 
 function setMobileViewportHeight(){
   const vh=window.innerHeight*0.01;
@@ -1893,6 +1974,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   await fetchTrending();
   await initCloudSession();
   await loadState();
+  applyAuthUI();
   const initialView=urlToViewId();
   isPopNavigating=true;
   navigate(initialView||'home');
