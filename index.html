@@ -6,6 +6,9 @@
 <title>CineLog Pro</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/supabase-bootstrap.js"></script>
 <style>
 :root{--bg:#07070a;--el:#111114;--text:#f0f0f5;--muted:#8a8a96;--accent:#3d8ef8;--star:#ffad0a;--border:rgba(255,255,255,.1);--serif:'Playfair Display',serif;--sans:'DM Sans',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -319,7 +322,7 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
   <div class="nav-links" id="nav-links">
     <a onclick="navigate('home')" id="nav-home" class="active-nav"><i class="ph ph-compass"></i> Discover</a>
     <a onclick="navigate('diary')" id="nav-diary"><i class="ph ph-user"></i> Profile</a>
-    <a onclick="navigate('filmlog')" id="nav-filmlog"><i class="ph ph-film-clapperboard"></i> My Films</a>
+    <a onclick="navigate('filmlog')" id="nav-filmlog"><i class="ph ph-film-slate"></i> My Films</a>
     <a onclick="navigate('community')" id="nav-community"><i class="ph ph-users-three"></i> Community</a>
     <a onclick="navigate('lists')" id="nav-lists"><i class="ph ph-list-dashes"></i> Lists</a>
     <a onclick="navigate('ai')" id="nav-ai"><i class="ph ph-sparkle"></i> AI Engine</a>
@@ -329,7 +332,7 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
 <div class="fab-dd" id="fab-dd">
   <a onclick="navigate('home')" id="fn-home" class="active-nav"><i class="ph ph-compass"></i> Discover</a>
   <a onclick="navigate('diary')" id="fn-diary"><i class="ph ph-user"></i> Profile</a>
-  <a onclick="navigate('filmlog')" id="fn-filmlog"><i class="ph ph-film-clapperboard"></i> My Films</a>
+  <a onclick="navigate('filmlog')" id="fn-filmlog"><i class="ph ph-film-slate"></i> My Films</a>
   <a onclick="navigate('community')" id="fn-community"><i class="ph ph-users-three"></i> Community</a>
   <a onclick="navigate('lists')" id="fn-lists"><i class="ph ph-list-dashes"></i> Lists</a>
   <a onclick="navigate('ai')" id="fn-ai"><i class="ph ph-sparkle"></i> AI Engine</a>
@@ -421,7 +424,7 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:48px;margin-bottom:0">
       <h2 class="ts" style="margin-bottom:0">Recent Logs</h2>
-      <button class="btn btn-g btn-sm" onclick="navigate('filmlog')"><i class="ph ph-film-clapperboard"></i> View All 412</button>
+      <button class="btn btn-g btn-sm" onclick="navigate('filmlog')"><i class="ph ph-film-slate"></i> View All 412</button>
     </div>
     <div class="diary-list">
       <div class="dc reveal"><div class="dt" style="background-image:url('https://images.unsplash.com/photo-1514316454349-750a7fd3da3a?w=500&q=80')"></div><div><h4 style="font-size:18px;font-weight:600;font-family:var(--serif)">The Quiet Love <span style="color:var(--muted);font-weight:400;font-family:var(--sans)">(2025)</span></h4><p style="color:var(--muted);font-size:12px;margin-top:4px">Dec 4, 2025</p><div class="dstars"><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i></div><p class="tb" style="font-size:14px;margin-top:5px">Such a beautiful exploration of life and relationships.</p></div></div>
@@ -1263,6 +1266,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(fade){fade.style.transition='opacity .5s';fade.style.pointerEvents='none'}
   const cnt=document.getElementById('hero-cnt');
   if(cnt)cnt.style.transition='opacity .38s,transform .38s';
+
+  // Supabase bootstrap (non-blocking fallback to local mode)
+  if (window.supabaseReady) {
+    window.supabaseReady.then(client => {
+      if (client) console.info('[CineLog] Supabase connected.');
+    });
+  }
 });
 
 // Expose globals
