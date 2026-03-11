@@ -1377,8 +1377,8 @@ function initObserver(){
 // ONBOARDING
 // ══════════════════════════════════════════
 const OB=[
-  {render:()=>`<h2 style="font-family:var(--sr);font-size:26px;font-weight:700;margin-bottom:7px">Welcome to CineLog.</h2><p class="tb" style="font-size:14px;margin-bottom:18px">Your personal cinema universe. Let's set up your profile.</p><div style="margin-bottom:14px"><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your name</label><input class="finp" id="ob-name" placeholder="e.g. Rizly" value="${obData.name||''}"></div><div><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your city</label><input class="finp" id="ob-city" placeholder="e.g. Bandung" value="${obData.city||''}"></div>`,
-   save:()=>{obData.name=document.getElementById('ob-name').value||'Cinephile';obData.city=document.getElementById('ob-city').value}},
+  {render:()=>`<h2 style="font-family:var(--sr);font-size:26px;font-weight:700;margin-bottom:7px">Welcome to CineLog.</h2><p class="tb" style="font-size:14px;margin-bottom:18px">Buat akun dulu, lalu lanjut set profil sinema kamu.</p><div style="margin-bottom:10px"><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Email</label><input class="finp" id="ob-email" type="email" placeholder="e.g. rizly@mail.com" value="${obData.email||''}"></div><div style="margin-bottom:14px"><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Password</label><input class="finp" id="ob-pass" type="password" placeholder="Minimal 6 karakter"></div><div style="margin-bottom:14px"><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your name</label><input class="finp" id="ob-name" placeholder="e.g. Rizly" value="${obData.name||''}"></div><div><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your city</label><input class="finp" id="ob-city" placeholder="e.g. Bandung" value="${obData.city||''}"></div>`,
+   save:()=>{obData.email=(document.getElementById('ob-email').value||'').trim();obData.password=(document.getElementById('ob-pass').value||'').trim();obData.name=document.getElementById('ob-name').value||'Cinephile';obData.city=document.getElementById('ob-city').value}},
   {render:()=>`<h2 style="font-family:var(--sr);font-size:24px;font-weight:700;margin-bottom:7px">What genres do you love?</h2><p class="tb" style="font-size:13px;margin-bottom:14px">Pick your favorites — this shapes your AI recommendations.</p><div class="ggrid">${['Thriller','Sci-Fi','Drama','Horror','Comedy','Romance','Action','Documentary','Animation','Arthouse','Crime','Fantasy'].map(g=>`<button class="gbtn${(obData.genres||[]).includes(g)?' sel':''}" onclick="toggleGenre(this,'${g}')">${g}</button>`).join('')}</div>`,
    save:()=>{}},
   {render:()=>`<h2 style="font-family:var(--sr);font-size:24px;font-weight:700;margin-bottom:7px">How often do you watch?</h2><p class="tb" style="font-size:13px;margin-bottom:14px">Helps calibrate your Cinematic Engine.</p><div style="display:flex;flex-direction:column;gap:8px">${['Daily — I live at the cinema','Several times a week','A few times a month','Occasionally'].map((o,i)=>`<button class="gbtn${obData.freq===i?' sel':''}" style="text-align:left;padding:11px 15px;border-radius:12px" onclick="selFreq(${i},this)">${o}</button>`).join('')}</div>`,
@@ -1396,7 +1396,7 @@ function obNext(){
   OB[obStep].save();obStep++;
   if(obStep>=OB.length){finishOb();return}renderOb();
 }
-function finishOb(){
+async function finishOb(){
   localStorage.setItem('cl_onboarded','1');
   localStorage.setItem('cl_name',obData.name||'Rizly');
   localStorage.setItem('cl_genres',JSON.stringify(obData.genres||[]));
@@ -1406,6 +1406,11 @@ function finishOb(){
   const ob=document.getElementById('ob');
   ob.style.transition='opacity .6s';ob.style.opacity='0';
   setTimeout(()=>ob.style.display='none',600);
+  if(obData.email&&obData.password&&CLOUD.client){
+    const r=await CLOUD.client.auth.signUp({email:obData.email,password:obData.password,options:{emailRedirectTo:location.origin+location.pathname}});
+    if(r.error){showAuthPage('Sign up onboarding gagal: '+(r.error.message||'Unknown error'));}
+    else{showAuthPage('Akun dibuat. Cek email untuk verifikasi, lalu login.');}
+  }
 }
 function initOb(){
   if(localStorage.getItem('cl_onboarded')){
@@ -1420,6 +1425,16 @@ function initOb(){
 // ══════════════════════════════════════════
 // PATCH: functional state and integrations
 const STORE={logs:'cl_logs_v1',lists:'cl_lists_v1',friends:'cl_friends_v1',reviews:'cl_reviews_v1',watchlist:'cl_watchlist_v1',avatar:'cl_avatar',bio:'cl_bio',loc:'cl_loc',username:'cl_username',publicId:'cl_public_id'};
+function resetLegacyStorageOnce(){
+  const k='cl_storage_reset_v3';
+  if(localStorage.getItem(k))return;
+  const keep={};
+  try{for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&key.startsWith('supabase.'))keep[key]=localStorage.getItem(key)}}catch(_){ }
+  localStorage.clear();
+  Object.keys(keep).forEach(key=>localStorage.setItem(key,keep[key]||''));
+  localStorage.setItem(k,'1');
+}
+
 const CONNECT_POOL=[
 {id:'c1001',username:'sarahm',name:'Sarah',status:'Logged Dune: Part Two — ★★★★½',avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80'},
 {id:'c1002',username:'diki_film',name:'Diki',status:'Watching The Dark Knight now',avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80'},
@@ -1970,6 +1985,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   window.addEventListener('resize',setMobileViewportHeight,{passive:true});
   window.addEventListener('orientationchange',setMobileViewportHeight,{passive:true});
   ensureEnhancements();
+  resetLegacyStorageOnce();
   buildCarousel();applyHero(MOVIES[0]);initObserver();bindCursor();initOb();
   await fetchTrending();
   await initCloudSession();
