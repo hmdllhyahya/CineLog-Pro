@@ -1990,7 +1990,14 @@ function searchAddFilm(q) {
   results.forEach(m => {
     const d = document.createElement('div');
     d.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px;border-radius:9px;background:rgba(255,255,255,.05);cursor:pointer';
-    d.innerHTML = '<div style="width:32px;height:48px;border-radius:5px;background-image:url(''+__safe(m.poster||'')+'');background-size:cover;flex-shrink:0"></div><div style="flex:1"><strong style="font-size:13px">'+__safe(m.title)+'</strong><p style="font-size:11px;color:var(--mu)">'+__safe(m.year||'')+'</p></div><button class="btn btna sm" style="font-size:11px" onclick="addFilmToCurrentList(''+__safe(m.id)+'')">+ Add</button>';
+    d.innerHTML = `<div style="width:32px;height:48px;border-radius:5px;background-image:url('${__safe(m.poster||'')}');background-size:cover;flex-shrink:0"></div><div style="flex:1"><strong style="font-size:13px">${__safe(m.title)}</strong><p style="font-size:11px;color:var(--mu)">${__safe(m.year||'')}</p></div><button class="btn btna sm" style="font-size:11px">+ Add</button>`;
+    const addBtn = d.querySelector('button');
+    if (addBtn) {
+      addBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        addFilmToCurrentList(m.id);
+      });
+    }
     r.appendChild(d);
   });
 }
