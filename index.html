@@ -1813,7 +1813,8 @@ function renderConnectResults(rows){
   out.innerHTML=rows.map((r,i)=>'<div class="fri"><div class="fav3" style="background-image:url(\''+__safe(r.avatar||'')+'\')"></div><div class="fri-info"><h4>'+__safe(r.name)+' <span style="color:var(--mu);font-size:12px">@'+__safe(r.username||'cinephile')+'</span></h4><p>'+__safe(r.id)+'</p></div><button class="btn btng sm" onclick="addFriend('+i+')">Add</button></div>').join('');
 }
 async function searchConnectPlus(){
-  const q=((document.getElementById('connect-query')||{}).value||'').trim().toLowerCase();
+  const raw=((document.getElementById('connect-query')||{}).value||'').trim().toLowerCase();
+  const q=raw.replace(/^@/,'');
   const out=document.getElementById('connect-results');
   if(!out)return;
   if(!q){out.innerHTML='';connectResults=[];return}
@@ -1821,16 +1822,20 @@ async function searchConnectPlus(){
 
   if(CLOUD.enabled&&CLOUD.client){
     try{
-      const dataQ=await CLOUD.client.from('cl_user_directory').select('user_id,username,public_id,display_name,avatar_url,status_text').or('username.ilike.%'+q+'%,public_id.ilike.%'+q+'%,display_name.ilike.%'+q+'%').limit(8);
+      const safe=q.replace(/[,()]/g,'');
+      const dataQ=await CLOUD.client.from('cl_user_directory').select('user_id,username,public_id,display_name,avatar_url,status_text').or('username.ilike.'+safe+',public_id.ilike.'+safe).limit(8);
       if(!dataQ.error){
-        const rows=(dataQ.data||[]).filter(x=>x.user_id!==CLOUD.uid).map(mapDirectoryRow);
+        const rows=(dataQ.data||[])
+          .filter(x=>x.user_id!==CLOUD.uid)
+          .filter(x=>String(x.username||'').toLowerCase()===q||String(x.public_id||'').toLowerCase()===q)
+          .map(mapDirectoryRow);
         renderConnectResults(rows);
         if(rows.length)return;
       }
     }catch(_){ }
   }
 
-  const rows=CONNECT_POOL.filter(x=>x.username.toLowerCase().includes(q)||x.id.toLowerCase().includes(q)||x.name.toLowerCase().includes(q)).slice(0,8);
+  const rows=CONNECT_POOL.filter(x=>x.username.toLowerCase()===q||x.id.toLowerCase()===q).slice(0,8);
   renderConnectResults(rows);
 }
 function addFriend(idx){
