@@ -1277,3 +1277,1892 @@ window.selectFreq=selectFreq;window.MOVIES=MOVIES;
 </script>
 </body>
 </html>
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CineLog Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="https://js.puter.com/v2/"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#07070a;--el:#111114;--text:#f0f0f5;--mu:#8a8a96;--ac:#3d8ef8;--star:#ffad0a;--bd:rgba(255,255,255,.1);--sr:'Playfair Display',serif;--ss:'DM Sans',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--ss);background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased;cursor:none;user-select:none}
+p.sel,h1.sel,#md-synopsis,#md-title,#rv-text,.qb p,.cmb,textarea,input{user-select:text;cursor:text}
+a,button{border:none;background:none;color:inherit;cursor:none;text-decoration:none;font-family:inherit}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ── CURSOR ── */
+#cring{position:fixed;top:0;left:0;width:34px;height:34px;border:2px solid rgba(255,255,255,.55);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .18s,height .18s,border-color .18s,background .18s;mix-blend-mode:difference}
+#cdot{position:fixed;top:0;left:0;width:6px;height:6px;background:#fff;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%)}
+.clh #cring{width:52px;height:52px;background:rgba(61,142,248,.14);border-color:var(--ac)}
+
+/* ── NAV ── */
+#tnav{position:fixed;top:0;left:0;width:100%;z-index:500;display:flex;align-items:center;gap:0;padding:14px 28px;transition:all .5s cubic-bezier(.16,1,.3,1)}
+#tnav::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,7,10,.94) 0%,transparent 100%);opacity:0;transition:opacity .4s;pointer-events:none}
+#tnav.scrolled::before{opacity:1}
+.nlogo{font-family:var(--sr);font-size:20px;font-weight:700;display:flex;align-items:center;gap:7px;color:var(--text);white-space:nowrap;z-index:2;text-shadow:0 2px 12px rgba(0,0,0,.9);flex-shrink:0}
+.nlogo i{color:var(--ac)}
+/* Back btn — small pill */
+#backbtn{display:none;align-items:center;gap:4px;margin-left:10px;padding:4px 12px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-size:12px;font-weight:500;color:rgba(255,255,255,.55);transition:all .2s;white-space:nowrap;flex-shrink:0}
+#backbtn:hover{color:var(--text);background:rgba(255,255,255,.14)}
+#backbtn.vis{display:flex}
+/* nav links */
+.nlinks{display:flex;align-items:center;gap:2px;margin-left:auto;transition:opacity .45s cubic-bezier(.16,1,.3,1),transform .45s cubic-bezier(.16,1,.3,1);transform-origin:right center}
+.nlinks a{font-size:13px;font-weight:500;padding:7px 13px;border-radius:24px;transition:color .2s,background .2s;white-space:nowrap;display:flex;align-items:center;gap:4px;text-shadow:0 1px 8px rgba(0,0,0,.95),0 2px 16px rgba(0,0,0,.7)}
+/* dynamic text color detection */
+.nlinks a{color:rgba(255,255,255,.72)}
+.nlinks a:hover,.nlinks a.an{color:#fff;background:rgba(255,255,255,.1)}
+.nlinks a.an{color:var(--ac)}
+#tnav.scrolled .nlinks{opacity:0;transform:translateX(46px) scale(.87);pointer-events:none}
+/* Log+ quick button */
+.logq{margin-left:10px;padding:7px 16px;border-radius:22px;background:var(--ac);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;gap:5px;transition:transform .2s,box-shadow .2s;white-space:nowrap;flex-shrink:0;text-shadow:none}
+.logq:hover{transform:scale(1.06);box-shadow:0 6px 22px rgba(61,142,248,.45)}
+#tnav.scrolled .logq{opacity:0;pointer-events:none}
+/* FAB */
+.nfab{position:fixed;top:13px;right:22px;z-index:600;width:46px;height:46px;border-radius:23px;background:rgba(255,255,255,.1);backdrop-filter:blur(20px);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:19px;opacity:0;transform:translateX(16px) scale(.82);transition:opacity .4s cubic-bezier(.16,1,.3,1),transform .4s cubic-bezier(.16,1,.3,1);pointer-events:none;box-shadow:0 6px 28px rgba(0,0,0,.4)}
+body.nsc .nfab{opacity:1;transform:translateX(0) scale(1);pointer-events:all}
+.fabdd{position:fixed;top:68px;right:22px;z-index:600;background:rgba(14,14,18,.95);backdrop-filter:blur(28px);border:1px solid var(--bd);border-radius:18px;padding:7px;display:flex;flex-direction:column;gap:2px;min-width:190px;opacity:0;visibility:hidden;transform:translateY(-8px) scale(.96);transform-origin:top right;transition:all .32s cubic-bezier(.16,1,.3,1);box-shadow:0 18px 55px rgba(0,0,0,.65)}
+.fabdd.open{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
+.fabdd a{display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:12px;font-size:14px;font-weight:500;color:var(--mu);transition:color .2s,background .2s}
+.fabdd a:hover,.fabdd a.an{color:var(--text);background:rgba(255,255,255,.07)}
+.fabdd a.an{color:var(--ac)}
+
+/* ── VIEWS ── */
+.view{display:none;min-height:100vh;position:relative;z-index:1;padding-bottom:60px}
+.view.active{display:block;animation:vu .5s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes vu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.ph{padding:108px 40px 44px;max-width:1200px;margin:0 auto;border-bottom:1px solid var(--bd)}
+.pc{max-width:1200px;margin:0 auto;padding:48px 40px}
+@media(max-width:768px){.ph{padding:88px 20px 36px}.pc{padding:36px 20px}}
+
+/* ── TYPE ── */
+.th{font-family:var(--sr);font-size:clamp(36px,6.5vw,68px);font-weight:700;line-height:1.05;letter-spacing:-.02em;text-shadow:0 4px 20px rgba(0,0,0,.8)}
+.tp{font-family:var(--sr);font-size:clamp(28px,4.5vw,44px);font-weight:700;letter-spacing:-.02em}
+.ts{font-family:var(--sr);font-size:clamp(20px,3vw,28px);font-weight:600;letter-spacing:-.01em;margin-bottom:18px}
+.tb{font-size:16px;line-height:1.65;color:var(--mu)}
+.gt{background:linear-gradient(135deg,#ff7a18,#af002d 50%,#319197);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* ── BUTTONS ── */
+.btn{padding:11px 24px;border-radius:28px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:7px;transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s}
+.btnp{background:var(--text);color:#000}.btnp:hover{transform:scale(1.04);box-shadow:0 7px 26px rgba(255,255,255,.14)}
+.btng{background:rgba(255,255,255,.09);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.16)}.btng:hover{background:rgba(255,255,255,.17);transform:scale(1.04)}
+.btna{background:var(--ac);color:#fff}.btna:hover{transform:scale(1.04);box-shadow:0 7px 26px rgba(61,142,248,.32)}
+.sm{padding:7px 15px;font-size:12px}
+
+/* ── HERO ── */
+.hw{position:relative;height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 40px 200px;overflow:hidden}
+@media(max-width:768px){.hw{padding:0 20px 220px}}
+#ytw{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+#ytw iframe{position:absolute;top:50%;left:50%;width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw;transform:translate(-50%,-50%);pointer-events:none}
+.hov{position:absolute;inset:0;z-index:1;background:linear-gradient(0deg,rgba(7,7,10,1) 0%,rgba(7,7,10,.48) 52%,rgba(7,7,10,.18) 100%)}
+.hfade{position:absolute;inset:0;z-index:2;background:var(--bg);opacity:0;transition:opacity .5s;pointer-events:none}
+.hcnt{position:relative;z-index:3;max-width:880px;transition:opacity .38s,transform .38s}
+.vtabs{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;margin-bottom:4px}
+.vtab{padding:4px 13px;border-radius:11px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);transition:all .2s;background:rgba(255,255,255,.05);text-shadow:none}
+.vtab:hover,.vtab.av{background:rgba(255,255,255,.14);color:#fff}
+/* VIDEO CONTROLS — fixed pos above carousel, always clickable */
+.hvctl{position:absolute;bottom:176px;right:40px;z-index:10;display:flex;gap:7px}
+@media(max-width:768px){.hvctl{right:20px;bottom:192px}}
+.vbtn{width:40px;height:40px;border-radius:20px;background:rgba(255,255,255,.13);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:15px;transition:background .2s,transform .18s}
+.vbtn:hover{background:rgba(255,255,255,.26);transform:scale(1.1)}
+
+/* ── CAROUSEL ── */
+.csec{position:relative;z-index:5;padding-bottom:20px}
+.clbl{padding-left:40px;margin-bottom:9px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.1em;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+@media(max-width:768px){.clbl{padding-left:20px}}
+.srow{display:flex;gap:15px;overflow-x:auto;padding:0 40px 18px;scroll-snap-type:x mandatory;scrollbar-width:none}
+.srow::-webkit-scrollbar{display:none}
+@media(max-width:768px){.srow{padding:0 20px 18px}}
+.pc2{flex:0 0 150px;aspect-ratio:2/3;border-radius:13px;background-size:cover;background-position:center;border:2px solid transparent;cursor:none;transition:transform .4s cubic-bezier(.16,1,.3,1),border-color .3s,box-shadow .4s;scroll-snap-align:start;box-shadow:0 7px 22px rgba(0,0,0,.5)}
+@media(min-width:768px){.pc2{flex:0 0 172px}}
+.pc2:hover{transform:scale(1.06) translateY(-8px);border-color:rgba(255,255,255,.75);box-shadow:0 18px 38px rgba(0,0,0,.6)}
+.pc2.ap{border-color:var(--ac);box-shadow:0 0 0 3px rgba(61,142,248,.22),0 18px 38px rgba(0,0,0,.6)}
+
+/* ── BENTO ── */
+.bsec{max-width:1200px;margin:0 auto;padding:56px 40px;text-align:center}
+@media(max-width:768px){.bsec{padding:36px 20px}}
+.bgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:32px;text-align:left}
+@media(max-width:768px){.bgrid{grid-template-columns:1fr}}
+.bc{background:rgba(17,17,20,.8);border-radius:26px;border:1px solid var(--bd);padding:32px 28px;display:flex;flex-direction:column;align-items:flex-start;min-height:250px;cursor:none;transition:transform .4s cubic-bezier(.16,1,.3,1),background .3s;backdrop-filter:blur(10px)}
+.bc:hover{transform:scale(1.02);background:rgba(22,22,26,.9)}
+.bc i{font-size:46px;color:var(--ac);margin-bottom:16px}
+.bc h3{font-family:var(--sr);font-size:19px;margin-bottom:7px;font-weight:600;line-height:1.3}
+.bc.s3{grid-column:span 3}.bc.s4{grid-column:span 4}.bc.s2{grid-column:span 2}
+.bc.aic{background:linear-gradient(135deg,rgba(17,17,20,.9),rgba(0,18,36,.9));border-color:rgba(49,145,151,.3)}
+.bc.aic i{color:#319197}
+@media(max-width:768px){.bc.s3,.bc.s4,.bc.s2{grid-column:span 1}}
+
+/* ── TRENDING ── */
+.tsec{max-width:1200px;margin:0 auto;padding:16px 40px 56px}
+@media(max-width:768px){.tsec{padding:16px 20px 50px}}
+.tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:22px}
+@media(max-width:640px){.tgrid{grid-template-columns:repeat(2,1fr)}}
+.ti{cursor:none;transition:transform .3s}
+.ti:hover{transform:translateY(-6px)}
+.tiposter{width:100%;aspect-ratio:2/3;border-radius:13px;background-size:cover;background-position:center;margin-bottom:9px;box-shadow:0 9px 28px rgba(0,0,0,.5);border:1px solid var(--bd)}
+.ti h4{font-size:14px;font-weight:600;margin-bottom:2px}
+.ti p{font-size:12px;color:var(--mu)}
+
+/* ── PROFILE ── */
+.profhdr{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+.avwrap{position:relative;width:96px;flex-shrink:0}
+.av{width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid var(--bd);box-shadow:0 14px 36px rgba(0,0,0,.5)}
+.avedit{position:absolute;bottom:2px;right:0;width:26px;height:26px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 3px 10px rgba(61,142,248,.4)}
+.statrow{display:flex;gap:22px;margin-top:12px;flex-wrap:wrap}
+.stat h5{font-family:var(--sr);font-size:24px;font-weight:700}
+.stat p{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-top:2px}
+.ptag{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:6px 13px;border-radius:18px;border:1px solid var(--bd);font-size:12px;font-weight:500;background:rgba(255,255,255,.04);color:var(--mu)}
+.sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+@media(max-width:540px){.fgrid{grid-template-columns:repeat(2,1fr)}}
+.fi{aspect-ratio:2/3;border-radius:11px;background-size:cover;background-position:center;cursor:none;border:1px solid var(--bd);box-shadow:0 7px 22px rgba(0,0,0,.4);transition:transform .3s}
+.fi:hover{transform:scale(1.04)}
+.dlist{display:flex;flex-direction:column;gap:13px;margin-top:22px}
+.dc{display:flex;gap:15px;background:rgba(17,17,20,.7);border-radius:16px;padding:17px;border:1px solid var(--bd);flex-wrap:wrap;backdrop-filter:blur(10px)}
+.dt{width:72px;height:108px;border-radius:9px;background-size:cover;background-position:center;flex-shrink:0;border:1px solid var(--bd)}
+.dstr{color:var(--star);font-size:14px;margin:6px 0 3px}
+.scard{background:linear-gradient(135deg,rgba(28,0,55,.8),rgba(0,9,45,.8));border:1px solid rgba(100,50,200,.3);border-radius:22px;padding:30px;margin-top:40px;position:relative;overflow:hidden}
+.scard::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(124,58,237,.28),rgba(61,142,248,.18),rgba(49,145,151,.18));filter:blur(50px);pointer-events:none}
+.stags{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+.stag{padding:6px 14px;border-radius:18px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px}
+.tgp{background:linear-gradient(135deg,#7c3aed,#3d8ef8);color:#fff}
+.tgs{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:var(--mu)}
+
+/* ── FILM LOG ── */
+.lfil{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+.fb2{padding:7px 15px;border-radius:13px;font-size:12px;font-weight:600;border:1px solid var(--bd);color:var(--mu);background:rgba(255,255,255,.04);transition:all .2s}
+.fb2:hover,.fb2.active{background:rgba(255,255,255,.11);color:var(--text);border-color:rgba(255,255,255,.22)}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:14px}
+.lgi{cursor:none;transition:transform .3s}
+.lgi:hover{transform:scale(1.04)}
+.lgp{width:100%;aspect-ratio:2/3;border-radius:11px;background-size:cover;background-position:center;border:1px solid var(--bd);margin-bottom:7px;position:relative;overflow:hidden}
+.lgr{position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,.75);padding:2px 7px;border-radius:7px;font-size:11px;font-weight:700;color:var(--star)}
+.lgi h4{font-size:12px;font-weight:600;margin-bottom:1px}
+.lgi p{font-size:11px;color:var(--mu)}
+
+/* ── COMMUNITY ── */
+.feed{max-width:700px;margin:0 auto;display:flex;flex-direction:column;gap:13px}
+.fcard{display:flex;gap:13px;background:rgba(17,17,20,.7);border-radius:20px;padding:19px;border:1px solid var(--bd);cursor:none;transition:background .2s,transform .2s;backdrop-filter:blur(10px)}
+.fcard:hover{background:rgba(22,22,28,.9);transform:translateY(-3px)}
+.fav2{width:42px;height:42px;border-radius:21px;background-size:cover;background-position:center;flex-shrink:0}
+.fb{flex:1;min-width:0}
+.fm{font-size:14px;margin-bottom:5px;color:var(--mu)}
+.fm strong{color:var(--text)}
+.fst{color:var(--star);font-size:13px;margin-bottom:5px}
+.fth{width:65px;height:97px;border-radius:9px;background-size:cover;background-position:center;flex-shrink:0;border:1px solid var(--bd)}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:30px}
+@media(max-width:640px){.cgrid{grid-template-columns:1fr}}
+.cpanel{background:rgba(17,17,20,.7);border-radius:20px;padding:20px;border:1px solid var(--bd);backdrop-filter:blur(10px)}
+.fri{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.fri:last-child{border:none}
+.fav3{width:36px;height:36px;border-radius:18px;background-size:cover;background-position:center;flex-shrink:0}
+.fri-info h4{font-size:13px;font-weight:600}
+.fri-info p{font-size:11px;color:var(--mu)}
+.tpill{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.tpill:last-child{border:none}
+.trnk{font-size:16px;font-weight:700;font-family:var(--sr);color:rgba(255,255,255,.2);width:20px}
+.trinfo h4{font-size:12px;font-weight:600}
+.trinfo p{font-size:10px;color:var(--mu)}
+.trcnt{margin-left:auto;font-size:11px;font-weight:700;color:var(--ac)}
+
+/* ── REVIEW ── */
+.rvd{background:rgba(17,17,20,.7);border-radius:20px;padding:24px;border:1px solid var(--bd);margin-bottom:14px;backdrop-filter:blur(10px)}
+.rvacts{display:flex;gap:9px;margin-top:13px}
+.abt{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:7px 13px;border-radius:11px;background:rgba(255,255,255,.06);border:1px solid var(--bd);transition:background .2s,color .2s}
+.abt:hover{background:rgba(255,255,255,.12);color:var(--ac)}
+.abt.liked{color:var(--star)}
+.cmb{background:rgba(0,0,0,.3);border:1px solid var(--bd);border-radius:13px;padding:12px;width:100%;color:var(--text);font-family:var(--ss);font-size:14px;outline:none;transition:border-color .2s;resize:none;height:84px}
+.cmb:focus{border-color:var(--ac)}
+
+/* ── LISTS ── */
+.lgrd{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+@media(max-width:540px){.lgrd{grid-template-columns:1fr}}
+.lcard{cursor:none;transition:transform .3s}
+.lcard:hover{transform:translateY(-7px)}
+.lcov{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;border-radius:15px;overflow:hidden;aspect-ratio:1;box-shadow:0 14px 36px rgba(0,0,0,.5);margin-bottom:13px;border:1px solid var(--bd)}
+.lcov div{background-size:cover;background-position:center}
+.lcard h3{font-family:var(--sr);font-size:17px;margin-bottom:3px}
+.nlbtn{display:flex;align-items:center;justify-content:center;gap:7px;aspect-ratio:1;border-radius:15px;border:2px dashed rgba(255,255,255,.11);transition:border-color .3s,background .3s;font-size:13px;font-weight:500;color:var(--mu);cursor:none;min-height:150px}
+.nlbtn:hover{border-color:var(--ac);background:rgba(61,142,248,.05);color:var(--ac)}
+.ldcov{width:140px;height:140px;border-radius:13px;background-size:cover;background-position:center;border:1px solid var(--bd);box-shadow:0 13px 34px rgba(0,0,0,.5);flex-shrink:0}
+.mosaic{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:14px;margin-top:20px}
+.mi{cursor:none;transition:transform .3s}
+.mi:hover{transform:scale(1.05)}
+.mp{width:100%;aspect-ratio:2/3;border-radius:10px;background-size:cover;background-position:center;border:1px solid var(--bd);margin-bottom:6px}
+
+/* ── AI ── */
+.aiwrap{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative}
+.aiorb{width:155px;height:155px;border-radius:50%;margin:0 auto 30px;background:conic-gradient(from 0deg,#ff7a18,#af002d,#319197,#3d8ef8,#ff7a18);animation:orbS 6s linear infinite;box-shadow:0 0 55px rgba(49,145,151,.4),0 0 110px rgba(255,122,24,.2);display:flex;align-items:center;justify-content:center;position:relative}
+.aiorb::before{content:'';position:absolute;inset:4px;border-radius:50%;background:var(--bg)}
+.aiorb i{position:relative;z-index:1;font-size:50px;color:#fff}
+.aianalyzin .aiorb{animation:orbS .9s linear infinite;box-shadow:0 0 95px rgba(49,145,151,.9),0 0 180px rgba(255,122,24,.6)}
+@keyframes orbS{from{filter:hue-rotate(0)}to{filter:hue-rotate(360deg)}}
+.aigbtn{background:rgba(17,17,20,.8);border:1px solid rgba(255,255,255,.14);padding:16px 34px;border-radius:38px;font-size:17px;font-weight:700;box-shadow:0 0 38px rgba(61,142,248,.14);cursor:none;transition:all .4s;display:inline-flex;align-items:center;gap:10px;backdrop-filter:blur(18px)}
+.aigbtn:hover{box-shadow:0 0 65px rgba(61,142,248,.42);transform:scale(1.05);border-color:rgba(61,142,248,.38)}
+#ai-loader{display:none;margin-top:26px;font-size:14px;color:var(--ac)}
+#ai-result{display:none;margin-top:40px;text-align:left;width:100%;max-width:660px;background:rgba(17,17,20,.8);border-radius:24px;padding:24px;border:1px solid var(--bd);backdrop-filter:blur(18px);position:relative;overflow:hidden}
+.airinn{display:flex;gap:20px;align-items:center;flex-wrap:wrap;position:relative;z-index:1}
+.airinn img{width:120px;border-radius:11px;box-shadow:0 13px 34px rgba(0,0,0,.6)}
+.mbadge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#ff7a18;margin-bottom:6px}
+
+/* ── MOVIE DETAIL ── */
+.mdwrap{position:relative;padding-top:88px}
+.mdart{position:absolute;top:0;left:0;width:100%;height:62vh;z-index:0;background-size:cover;background-position:center;mask-image:linear-gradient(180deg,rgba(0,0,0,.6) 0%,transparent 100%);-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.6) 0%,transparent 100%);filter:blur(2px) saturate(1.15)}
+.mdinn{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:56px 40px}
+@media(max-width:768px){.mdinn{padding:36px 20px}}
+.mdflex{display:flex;gap:36px;flex-wrap:wrap}
+.mdleft{flex-shrink:0;display:flex;flex-direction:column;gap:11px;width:228px}
+@media(max-width:768px){.mdleft{width:144px}}
+.mdpost{width:100%;border-radius:17px;box-shadow:0 26px 56px rgba(0,0,0,.8);border:1px solid var(--bd);display:block}
+.mdinfo{flex:1;min-width:250px}
+.mdmeta{display:flex;gap:9px;align-items:center;color:var(--mu);font-size:14px;margin:10px 0 16px;flex-wrap:wrap}
+.mddot{width:3px;height:3px;border-radius:50%;background:var(--mu)}
+.rrow{display:flex;gap:11px;flex-wrap:wrap;margin-bottom:18px}
+.rchip{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid var(--bd);background:rgba(255,255,255,.06);text-decoration:none;transition:background .2s}
+.rchip:hover{background:rgba(255,255,255,.12)}
+.rchip img{width:15px;height:auto}
+.sdiv{border:none;border-top:1px solid var(--bd);margin:26px 0}
+.qb{padding:16px 20px;border-left:3px solid var(--ac);background:rgba(61,142,248,.06);border-radius:0 11px 11px 0;margin-bottom:10px}
+.qb p{font-family:var(--sr);font-size:15px;font-style:italic;margin-bottom:4px;line-height:1.55;user-select:text}
+.qb cite{font-size:11px;color:var(--mu)}
+.ffcard{background:rgba(17,17,20,.7);border:1px solid var(--bd);border-radius:16px;padding:20px 24px;margin-top:24px;position:relative;overflow:hidden;backdrop-filter:blur(10px)}
+.fflbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--star);margin-bottom:8px;display:flex;align-items:center;gap:4px}
+#fftext{font-size:14px;line-height:1.65;transition:opacity .4s;user-select:text}
+.whycard{background:linear-gradient(135deg,rgba(28,9,55,.7),rgba(9,18,46,.7));border:1px solid rgba(100,50,200,.2);border-radius:16px;padding:20px 24px;margin-top:13px;backdrop-filter:blur(10px)}
+.whylbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#7c3aed;margin-bottom:8px;display:flex;align-items:center;gap:4px}
+/* Stills */
+.stgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.still{width:100%;aspect-ratio:16/9;border-radius:9px;object-fit:cover;border:1px solid var(--bd);transition:transform .3s,opacity .3s;cursor:none}
+.still:hover{transform:scale(1.02);opacity:.88}
+/* Soundtrack player */
+.sndp{background:rgba(17,17,20,.8);border:1px solid var(--bd);border-radius:14px;padding:12px 16px;margin-top:10px;display:flex;align-items:center;gap:10px;backdrop-filter:blur(10px)}
+.sndinf{flex:1}
+.sndt{font-size:12px;font-weight:600;margin-bottom:1px}
+.snds{font-size:10px;color:var(--mu)}
+.sndctls{display:flex;gap:6px}
+.sndbtn{width:32px;height:32px;border-radius:16px;background:rgba(255,255,255,.09);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:13px;transition:background .2s}
+.sndbtn:hover{background:rgba(255,255,255,.18)}
+.sndbtn.playing{background:rgba(61,142,248,.18);border-color:rgba(61,142,248,.35);color:var(--ac)}
+#sndytw{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+/* ── MODALS ── */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(18px);z-index:800;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .32s}
+.mov.open{opacity:1;pointer-events:all}
+.mcard{background:rgba(15,15,19,.97);border:1px solid var(--bd);border-radius:24px;padding:26px;width:90%;max-width:460px;box-shadow:0 38px 76px rgba(0,0,0,.8);transform:scale(.94) translateY(18px);transition:transform .4s cubic-bezier(.16,1,.3,1);backdrop-filter:blur(36px);max-height:90vh;overflow-y:auto}
+.mov.open .mcard{transform:scale(1) translateY(0)}
+.mhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.mhdr h2{font-family:var(--sr);font-size:20px}
+.xbtn{width:30px;height:30px;border-radius:15px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:14px;transition:background .2s;cursor:none}
+.xbtn:hover{background:rgba(255,255,255,.16)}
+.frow{margin-bottom:16px}
+.frow label{display:block;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.finp{width:100%;background:rgba(0,0,0,.4);border:1px solid var(--bd);border-radius:11px;padding:11px 14px;color:var(--text);font-family:var(--ss);font-size:14px;outline:none;transition:border-color .2s}
+.finp:focus{border-color:var(--ac)}
+textarea.finp{height:96px;resize:none}
+select.finp{cursor:none;background:rgba(0,0,0,.5)}
+.starrow{display:flex;gap:6px;font-size:25px;color:#333;cursor:none}
+.starrow i.lit{color:var(--star)}
+
+/* ── ONBOARDING ── */
+#ob{position:fixed;inset:0;z-index:2000;background:rgba(7,7,10,.98);display:flex;align-items:center;justify-content:center}
+.obcard{width:90%;max-width:500px;text-align:center}
+.oblogo{font-family:var(--sr);font-size:30px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:7px}
+.oblogo i{color:var(--ac)}
+.obsteps{display:flex;justify-content:center;gap:5px;margin:20px 0}
+.obs{width:26px;height:3px;border-radius:2px;background:rgba(255,255,255,.14);transition:background .3s}
+.obs.active{background:var(--ac)}
+.obs.done{background:rgba(61,142,248,.38)}
+.obbody{min-height:210px;display:flex;flex-direction:column;justify-content:center}
+.ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px}
+.gbtn{padding:9px 7px;border-radius:12px;border:1px solid var(--bd);font-size:12px;font-weight:500;color:var(--mu);background:rgba(255,255,255,.04);transition:all .2s;text-align:center;cursor:none}
+.gbtn.sel{border-color:var(--ac);background:rgba(61,142,248,.14);color:var(--text)}
+
+/* ── MISC ── */
+.no-scroll{overflow:hidden}
+.rev{opacity:0;transform:translateY(34px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.rev.active{opacity:1;transform:translateY(0)}
+.spin{animation:sp 1.2s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#sndytw{position:fixed;left:-9999px;width:1px;height:1px}
+/* ── MOBILE RESPONSIVE PACK ── */
+@media (max-width: 900px){
+  html,body{width:100%;overflow-x:hidden}
+  body{cursor:auto;-webkit-tap-highlight-color:transparent}
+  a,button,.pc2,.ti,.fi,.fcard,.lcard,.bc,.mi,.lgi,.gbtn,.fb2,.vtab,.still,.sndbtn,.abt{cursor:pointer}
+  #cring,#cdot{display:none!important}
+
+  #tnav{padding:10px 14px;gap:8px}
+  #tnav::before{opacity:1}
+  .nlogo{font-size:19px}
+  #backbtn{display:none!important}
+  .nlinks{display:none!important}
+  .logq{display:none!important}
+  #tnav.scrolled .nlinks,#tnav.scrolled .logq{opacity:1;pointer-events:none}
+
+  .nfab{top:10px;right:12px;opacity:1;transform:none;pointer-events:all;width:42px;height:42px;border-radius:21px;font-size:17px}
+  .fabdd{top:58px;right:12px;left:12px;min-width:0;max-height:70svh;overflow:auto}
+  .fabdd a{padding:12px 14px;font-size:14px}
+
+  .view{padding-bottom:92px}
+  .ph{padding:78px 16px 24px}
+  .pc{padding:24px 16px}
+  .tb{font-size:14px;line-height:1.6}
+  .tp{font-size:clamp(24px,9vw,34px)}
+  .ts{font-size:clamp(19px,6.5vw,24px)}
+
+  .hw{height:calc(var(--app-vh, 1vh) * 100);min-height:560px;padding:0 16px 132px}
+  #ytw iframe{width:220vw;height:100%}
+  .hcnt{max-width:100%}
+  .hcnt .th{font-size:clamp(34px,12vw,52px);line-height:1.04}
+  .hcnt .tb{max-width:95%}
+  .vtabs{gap:6px;margin-top:10px}
+  .vtab{padding:6px 11px;font-size:11px}
+  .hvctl{right:16px;bottom:108px}
+  .vbtn{width:38px;height:38px}
+
+  .clbl{padding-left:16px;font-size:10px}
+  .srow{padding:0 16px 12px;gap:10px}
+  .pc2{flex-basis:118px;border-radius:11px}
+
+  .bsec{padding:30px 16px}
+  .bgrid{gap:10px}
+  .bc{padding:22px 18px;border-radius:18px;min-height:192px}
+  .bc i{font-size:34px;margin-bottom:10px}
+  .bc h3{font-size:17px}
+
+  .tsec{padding:10px 16px 34px}
+  .tgrid{gap:11px}
+  .tiposter{border-radius:11px}
+
+  .profhdr{gap:14px}
+  .avwrap{width:76px}
+  .av{width:76px;height:76px}
+  .avedit{width:24px;height:24px}
+  .statrow{gap:14px}
+  .stat h5{font-size:22px}
+  .scard{padding:20px;border-radius:17px;margin-top:26px}
+  .dlist{margin-top:14px}
+  .dc{padding:13px;border-radius:14px;gap:12px}
+  .dt{width:58px;height:88px}
+
+  .lfil{gap:6px;overflow:auto;white-space:nowrap;flex-wrap:nowrap;padding-bottom:2px}
+  .fb2{flex:0 0 auto}
+  .lgrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+
+  .cgrid{grid-template-columns:1fr;gap:12px;margin-bottom:18px}
+  .cpanel{padding:14px;border-radius:16px}
+  .fcard{padding:13px;gap:10px;align-items:flex-start;border-radius:16px}
+  .fav2{width:36px;height:36px;border-radius:18px}
+  .fth{width:52px;height:78px}
+  .fm{font-size:13px}
+  .fst{font-size:12px}
+
+  .rvd{padding:16px;border-radius:16px}
+  .rvacts{flex-wrap:wrap;gap:8px}
+  .abt{padding:7px 10px;font-size:12px}
+
+  .lgrd{grid-template-columns:1fr;gap:14px}
+  .nlbtn{min-height:118px}
+  .ldcov{width:112px;height:112px}
+  .mosaic{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+
+  .aiwrap{min-height:66vh;padding-top:4px}
+  .aiorb{width:126px;height:126px;margin-bottom:20px}
+  .aigbtn{padding:13px 20px;font-size:15px;gap:8px}
+  #ai-result{margin-top:20px;padding:16px;border-radius:16px}
+  .airinn{gap:12px}
+  .airinn img{width:92px}
+
+  .mdwrap{padding-top:70px}
+  .mdart{height:46vh}
+  .mdinn{padding:22px 16px}
+  .mdflex{display:grid;grid-template-columns:1fr;gap:16px}
+  .mdleft{width:100%;max-width:250px;margin:0 auto}
+  .mdinfo{min-width:0}
+  .mdmeta{font-size:13px;margin:9px 0 13px}
+  .qb{padding:12px 14px}
+  .ffcard,.whycard{padding:14px 16px;border-radius:14px}
+  .stgrid{gap:6px}
+  .sndp{padding:10px 12px}
+
+  .mov{align-items:flex-end}
+  .mcard{width:100%;max-width:none;border-bottom-left-radius:0;border-bottom-right-radius:0;border-top-left-radius:18px;border-top-right-radius:18px;padding:18px;max-height:78svh}
+  .mhdr{margin-bottom:14px}
+  .mhdr h2{font-size:18px}
+  textarea.finp{height:112px}
+
+  #ob{padding:14px}
+  .obcard{width:100%;max-width:460px}
+  .oblogo{font-size:27px}
+  .obbody{min-height:190px}
+}
+
+@media (max-width: 560px){
+  .tgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mosaic{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .btn{padding:10px 16px;font-size:13px}
+  .sm{padding:7px 12px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div id="cring"></div>
+<div id="cdot"></div>
+<div id="sndytw"><div id="snd-yt-player"></div></div>
+<audio id="snd-audio" preload="none" style="display:none"></audio>
+
+<!-- ══ ONBOARDING ══ -->
+<div id="ob">
+  <div class="obcard">
+    <div class="oblogo"><i class="ph-fill ph-film-strip"></i> CineLog</div>
+    <p class="tb" style="font-size:14px">Your personal cinema universe.</p>
+    <div class="obsteps"><div class="obs active" id="obs0"></div><div class="obs" id="obs1"></div><div class="obs" id="obs2"></div></div>
+    <div class="obbody" id="obbody"></div>
+    <button class="btn btnp" style="width:100%;justify-content:center;margin-top:20px" id="obnext" onclick="obNext()">Continue <i class="ph-bold ph-arrow-right"></i></button>
+  </div>
+</div>
+
+<!-- ══ NAV ══ -->
+<nav id="tnav">
+  <div class="nlogo" onclick="navigate('home')"><i class="ph-fill ph-film-strip"></i> CineLog</div>
+  <button id="backbtn" onclick="goBack()"><i class="ph-bold ph-arrow-left"></i> <span id="backlbl">Back</span></button>
+  <div class="nlinks" id="nlinks">
+    <a onclick="navigate('home')" id="n-home" class="an">Discover</a>
+    <a onclick="navigate('diary')" id="n-diary">Profile</a>
+    <a onclick="navigate('filmlog')" id="n-filmlog">My Films</a>
+    <a onclick="navigate('community')" id="n-community">Community</a>
+    <a onclick="navigate('lists')" id="n-lists">Lists</a>
+    <a onclick="navigate('ai')" id="n-ai">AI Engine</a>
+  </div>
+  <button class="logq" onclick="openLogModal()"><i class="ph-bold ph-plus"></i> Log+</button>
+</nav>
+<button class="nfab" id="nfab" onclick="toggleFab()"><i class="ph-bold ph-list" id="fabicon"></i></button>
+<div class="fabdd" id="fabdd">
+  <a onclick="navigate('home')" id="fn-home" class="an">Discover</a>
+  <a onclick="navigate('diary')" id="fn-diary">Profile</a>
+  <a onclick="navigate('filmlog')" id="fn-filmlog">My Films</a>
+  <a onclick="navigate('community')" id="fn-community">Community</a>
+  <a onclick="navigate('lists')" id="fn-lists">Lists</a>
+  <a onclick="navigate('ai')" id="fn-ai">AI Engine</a>
+  <a onclick="openLogModal()" style="color:var(--ac)"><i class="ph-bold ph-plus"></i> Log Film</a>
+</div>
+
+<div id="app">
+
+<!-- ══ HOME ══ -->
+<div id="view-home" class="view active">
+  <div class="hw">
+    <div id="ytw"><div id="yt-player"></div></div>
+    <div class="hov"></div>
+    <div class="hfade" id="hfade"></div>
+    <div class="hcnt" id="hcnt">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.5);margin-bottom:7px;text-shadow:0 2px 8px rgba(0,0,0,.9)">Now Featuring</div>
+      <h1 class="th" id="htitle">Loading…</h1>
+      <div class="vtabs" id="vtabs"></div>
+      <p style="margin-top:6px;font-size:15px;color:rgba(255,255,255,.65);max-width:560px;text-shadow:0 2px 10px rgba(0,0,0,.95);line-height:1.6" id="hdesc"></p>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:20px">
+        <button class="btn btnp" onclick="openLogModal()"><i class="ph-bold ph-plus"></i> Log this film</button>
+        <button class="btn btng" onclick="goToHeroMovie()"><i class="ph-bold ph-info"></i> Details</button>
+      </div>
+    </div>
+    <div class="hvctl">
+      <button class="vbtn" onclick="toggleMute()"><i class="ph-bold ph-speaker-slash" id="muteico"></i></button>
+      <button class="vbtn" onclick="togglePlay()"><i class="ph-bold ph-pause" id="playico"></i></button>
+    </div>
+  </div>
+  <div class="csec">
+    <div class="clbl">CineLog Top 10</div>
+    <div class="srow" id="poster-row"></div>
+  </div>
+  <section class="bsec">
+    <h2 class="ts rev">Get the complete picture.</h2>
+    <div class="bgrid">
+      <div class="bc s3 rev" onclick="navigate('diary')"><i class="ph-duotone ph-books"></i><h3>A diary for your cinematic life.</h3><p class="tb">Keep a beautiful, organized history of every film you've watched.</p></div>
+      <div class="bc s3 rev" style="transition-delay:.07s" onclick="navigate('community')"><i class="ph-duotone ph-users-three"></i><h3>Follow your people.</h3><p class="tb">Discover films through people whose taste you trust most.</p></div>
+      <div class="bc s3 rev" style="transition-delay:.14s" onclick="navigate('lists')"><i class="ph-duotone ph-list-dashes"></i><h3>Curate custom lists.</h3><p class="tb">Build, share, and rank your definitive film collections.</p></div>
+      <div class="bc s3 aic rev" style="transition-delay:.21s" onclick="navigate('ai')"><i class="ph-duotone ph-sparkle" style="color:#319197"></i><h3><span class="gt">Powered by AI Insights.</span></h3><p class="tb">The Cinematic Engine analyzes your taste profile to surface hidden gems.</p></div>
+    </div>
+  </section>
+  <section class="tsec">
+    <h2 class="ts rev">Trending Now</h2>
+    <div class="tgrid">
+      <div class="ti rev" onclick="navigate('movie&id=dune2')"><div class="tiposter" style="background-image:url('https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg')"></div><h4>Dune: Part Two</h4><p>2024 · Villeneuve</p></div>
+      <div class="ti rev" style="transition-delay:.07s" onclick="navigate('movie&id=oppenheimer')"><div class="tiposter" style="background-image:url('https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg')"></div><h4>Oppenheimer</h4><p>2023 · Nolan</p></div>
+      <div class="ti rev" style="transition-delay:.14s" onclick="navigate('movie&id=parasite')"><div class="tiposter" style="background-image:url('https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg')"></div><h4>Parasite</h4><p>2019 · Bong Joon Ho</p></div>
+      <div class="ti rev" style="transition-delay:.21s" onclick="navigate('movie&id=lambs')"><div class="tiposter" style="background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg')"></div><h4>Silence of the Lambs</h4><p>1991 · Demme</p></div>
+    </div>
+  </section>
+</div>
+
+<!-- ══ DIARY ══ -->
+<div id="view-diary" class="view">
+  <div class="ph">
+    <div class="profhdr">
+      <div class="avwrap">
+        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&fit=crop" class="av" id="profav" alt="Avatar">
+        <button class="avedit" onclick="openM('profile-modal')"><i class="ph-bold ph-pencil-simple"></i></button>
+      </div>
+      <div style="flex:1">
+        <h1 class="tp" id="profname" style="margin-bottom:6px">Rizly</h1>
+        <p style="color:var(--mu);font-size:13px" id="profmeta">Bandung, Indonesia &nbsp;·&nbsp; Film Student at UNPAD</p>
+        <p style="color:var(--mu);font-size:11px;margin-top:4px" id="profid">ID: user-new</p>
+        <div class="statrow">
+          <div class="stat"><h5>412</h5><p>Films</p></div>
+          <div class="stat"><h5>84</h5><p>This Year</p></div>
+          <div class="stat"><h5>12</h5><p>Reviews</p></div>
+        </div>
+        <div class="ptag" id="styletag">✦ The Nolan Loyalist · Psychological Voyeur</div>
+      </div>
+      <button class="btn btng sm" onclick="openM('profile-modal')">Edit</button>
+    </div>
+  </div>
+  <div class="pc">
+    <div class="sh"><h2 class="ts" style="margin-bottom:0">All-Time Favorites</h2><button class="btn btng sm" onclick="openM('edit-fav-modal')">Edit</button></div>
+    <div class="fgrid rev">
+      <div class="fi" style="background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg')" onclick="navigate('movie&id=lambs')"></div>
+      <div class="fi" style="background-image:url('https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg')" onclick="navigate('movie&id=interstellar')"></div>
+      <div class="fi" style="background-image:url('https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg')" onclick="navigate('movie&id=oppenheimer')"></div>
+      <div class="fi" style="background-image:url('https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg')" onclick="navigate('movie&id=dune2')"></div>
+    </div>
+    <div class="scard rev" style="position:relative">
+      <div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+        <div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#7c3aed;margin-bottom:9px">✦ Cinematic Identity</p><h3 class="ts" style="margin-bottom:0;font-size:21px">Analyze My Style</h3></div>
+        <button class="btn btna sm" onclick="analyzeStyle()">Run Analysis</button>
+      </div>
+      <div id="style-result" style="display:none;margin-top:14px;position:relative;z-index:1"><p class="tb" style="margin-bottom:12px;font-size:14px" id="style-desc"></p><div class="stags" id="style-tags"></div></div>
+      <div id="style-loader" style="display:none;margin-top:14px;color:var(--ac);font-size:13px;position:relative;z-index:1"><i class="ph-bold ph-spinner-gap spin"></i> Analyzing your cinematic identity…</div>
+    </div>
+    <div class="sh" style="margin-top:44px"><h2 class="ts" style="margin-bottom:0">Recent Logs</h2><button class="btn btng sm" onclick="navigate('filmlog')">View All 412</button></div>
+    <div class="dlist">
+      <div class="dc rev"><div class="dt" style="background-image:url('https://images.unsplash.com/photo-1514316454349-750a7fd3da3a?w=500&q=80')"></div><div><h4 style="font-size:17px;font-weight:600;font-family:var(--sr)">The Quiet Love <span style="color:var(--mu);font-weight:400;font-family:var(--ss);font-size:14px">(2025)</span></h4><p style="color:var(--mu);font-size:11px;margin-top:3px">Dec 4, 2025</p><div class="dstr">★★★★★</div><p class="tb" style="font-size:13px;margin-top:4px">Such a beautiful exploration of life and relationships.</p></div></div>
+      <div class="dc rev"><div class="dt" style="background-image:url('https://image.tmdb.org/t/p/w500/1XnnBq4DUS2p7P7aHjB7E206QxP.jpg')"></div><div><h4 style="font-size:17px;font-weight:600;font-family:var(--sr)">Vina Sebelum 7 Hari <span style="color:var(--mu);font-weight:400;font-family:var(--ss);font-size:14px">(2024)</span></h4><p style="color:var(--mu);font-size:11px;margin-top:3px">Feb 6, 2026</p><div class="dstr">★★★</div><p class="tb" style="font-size:13px;margin-top:4px">For LSF internship analysis. Highly intense.</p></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FILM LOG ══ -->
+<div id="view-filmlog" class="view">
+  <div class="ph"><h1 class="tp">My Film Log</h1><p class="tb" style="margin-top:5px">All 412 films — sorted &amp; filtered.</p></div>
+  <div class="pc">
+    <div class="lfil" id="lfil">
+      <button class="fb2 active" onclick="filterLog('all',this)">All Time</button>
+      <button class="fb2" onclick="filterLog('year',this)">This Year</button>
+      <button class="fb2" onclick="filterLog('month',this)">This Month</button>
+      <button class="fb2" onclick="filterLog('week',this)">This Week</button>
+      <button class="fb2" style="margin-left:auto" onclick="filterLog('rating',this)">By Rating</button>
+      <button class="fb2" onclick="filterLog('recent',this)">Recent First</button>
+    </div>
+    <div class="lgrid" id="lgrid"></div>
+  </div>
+</div>
+
+<!-- ══ COMMUNITY ══ -->
+<div id="view-community" class="view">
+  <div class="ph"><h1 class="tp">Community</h1><p class="tb" style="margin-top:5px">What the world is watching right now.</p></div>
+  <div class="pc">
+    <div class="cgrid">
+      <div class="cpanel">
+        <h3 class="ts" style="font-size:17px;margin-bottom:14px">Friends</h3>
+        <div class="fri"><div class="fav3" style="background-image:url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80')"></div><div class="fri-info"><h4>Sarah</h4><p>Logged Dune: Part Two — ★★★★½</p></div></div>
+        <div class="fri"><div class="fav3" style="background-image:url('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80')"></div><div class="fri-info"><h4>Diki</h4><p>Watching The Dark Knight now</p></div></div>
+        <div class="fri"><div class="fav3" style="background-image:url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80')"></div><div class="fri-info"><h4>Maya</h4><p>Added Parasite to Watchlist</p></div></div>
+        <div class="fri"><div class="fav3" style="background-image:url('https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&q=80')"></div><div class="fri-info"><h4>Fariz</h4><p>Reviewed Oppenheimer — ★★★★</p></div></div>
+      </div>
+      <div class="cpanel">
+        <h3 class="ts" style="font-size:17px;margin-bottom:14px">Global Trending</h3>
+        <div class="tpill"><span class="trnk">1</span><div class="trinfo"><h4>Dune: Part Two</h4><p>Villeneuve · 2024</p></div><span class="trcnt">2.4K</span></div>
+        <div class="tpill"><span class="trnk">2</span><div class="trinfo"><h4>Oppenheimer</h4><p>Nolan · 2023</p></div><span class="trcnt">1.9K</span></div>
+        <div class="tpill"><span class="trnk">3</span><div class="trinfo"><h4>Parasite</h4><p>Bong Joon Ho · 2019</p></div><span class="trcnt">1.7K</span></div>
+        <div class="tpill"><span class="trnk">4</span><div class="trinfo"><h4>The Dark Knight</h4><p>Nolan · 2008</p></div><span class="trcnt">1.5K</span></div>
+        <div class="tpill"><span class="trnk">5</span><div class="trinfo"><h4>Interstellar</h4><p>Nolan · 2014</p></div><span class="trcnt">1.2K</span></div>
+      </div>
+    </div>
+    <h2 class="ts">Latest Reviews</h2>
+    <div class="feed">
+      <div class="fcard rev" onclick="navigate('review&id=0')"><div class="fav2" style="background-image:url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80')"></div><div class="fb"><div class="fm"><strong>Sarah</strong> watched <strong>Dune: Part Two</strong></div><div class="fst">★★★★½</div><p class="tb" style="font-size:13px">Denis Villeneuve does it again. The IMAX sound design had my seat shaking.</p><div style="margin-top:7px;font-size:11px;color:var(--mu)">42 likes · 8 comments <span style="color:var(--ac)">Read more →</span></div></div><div class="fth" style="background-image:url('https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg')"></div></div>
+      <div class="fcard rev" onclick="navigate('review&id=1')"><div class="fav2" style="background-image:url('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80')"></div><div class="fb"><div class="fm"><strong>Diki</strong> watched <strong>The Silence of the Lambs</strong></div><div class="fst">★★★★★</div><p class="tb" style="font-size:13px">A masterclass in tension. Hopkins is terrifying with just a stare.</p><div style="margin-top:7px;font-size:11px;color:var(--mu)">78 likes · 14 comments <span style="color:var(--ac)">Read more →</span></div></div><div class="fth" style="background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg')"></div></div>
+      <div class="fcard rev" onclick="navigate('review&id=2')"><div class="fav2" style="background-image:url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80')"></div><div class="fb"><div class="fm"><strong>Maya</strong> watched <strong>Parasite</strong></div><div class="fst">★★★★★</div><p class="tb" style="font-size:13px">Mind-blowing. The genre shifts without warning are pure genius.</p><div style="margin-top:7px;font-size:11px;color:var(--mu)">121 likes · 23 comments <span style="color:var(--ac)">Read more →</span></div></div><div class="fth" style="background-image:url('https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg')"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REVIEW DETAIL ══ -->
+<div id="view-review" class="view">
+  <div class="ph">
+    <div style="display:flex;gap:13px;align-items:center;flex-wrap:wrap">
+      <div class="fav2" id="rvav" style="width:52px;height:52px;border-radius:26px;background-size:cover;background-position:center"></div>
+      <div><h1 class="tp" id="rvtitle" style="font-size:24px"></h1><p style="color:var(--mu);margin-top:3px;font-size:13px" id="rvsub"></p></div>
+    </div>
+  </div>
+  <div class="pc" style="max-width:700px">
+    <div class="rvd">
+      <div style="display:flex;gap:13px;margin-bottom:13px;align-items:flex-start">
+        <div class="fth" id="rvposter"></div>
+        <div><div class="fst" id="rvstars" style="font-size:18px;margin-bottom:7px"></div><p id="rvtext" class="tb sel" style="font-size:14px;line-height:1.7"></p></div>
+      </div>
+      <div class="rvacts">
+        <button class="abt" id="likebtn" onclick="toggleLike()"><i class="ph-bold ph-heart"></i> <span id="likecnt">42</span></button>
+        <button class="abt" onclick="document.getElementById('cmtinp').focus()"><i class="ph-bold ph-chat-circle"></i> Comment</button>
+        <button class="abt" id="rvfilmbtn"><i class="ph-bold ph-film-strip"></i> View Film</button>
+      </div>
+    </div>
+    <h3 style="font-family:var(--sr);font-size:17px;margin-bottom:12px">Comments</h3>
+    <div id="cmtlist" style="display:flex;flex-direction:column;gap:9px;margin-bottom:16px"></div>
+    <textarea class="cmb" id="cmtinp" placeholder="Add a comment…"></textarea>
+    <button class="btn btna sm" style="margin-top:7px" onclick="postComment()"><i class="ph-bold ph-paper-plane-tilt"></i> Post</button>
+  </div>
+</div>
+
+<!-- ══ LISTS ══ -->
+<div id="view-lists" class="view">
+  <div class="ph"><div class="sh" style="margin-bottom:0"><h1 class="tp">Lists</h1><button class="btn btna sm" onclick="openM('new-list-modal')"><i class="ph-bold ph-plus"></i> New List</button></div><p class="tb" style="margin-top:5px">Your curated film collections.</p></div>
+  <div class="pc">
+    <div class="lgrd">
+      <div class="lcard rev" onclick="navigate('lists-detail&id=masterpieces')"><div class="lcov"><div style="background-image:url('https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg')"></div><div style="background-image:url('https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg')"></div><div style="background-image:url('https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg')"></div><div style="background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg')"></div></div><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h3>Cinematic Masterpieces</h3><p class="tb" style="font-size:12px">24 Films · Rizly</p></div><button class="btn btng sm" style="padding:5px 9px;font-size:11px" onclick="event.stopPropagation();openM('edit-list-modal')">✎</button></div></div>
+      <div class="lcard rev" style="transition-delay:.07s" onclick="navigate('lists-detail&id=lsf')"><div class="lcov"><div style="background-image:url('https://image.tmdb.org/t/p/w500/1XnnBq4DUS2p7P7aHjB7E206QxP.jpg')"></div><div style="background:#1a1a2e"></div><div style="background:#16213e"></div><div style="background:#0f3460"></div></div><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h3>LSF Internship Watchlist</h3><p class="tb" style="font-size:12px">8 Films · Rizly</p></div><button class="btn btng sm" style="padding:5px 9px;font-size:11px" onclick="event.stopPropagation();openM('edit-list-modal')">✎</button></div></div>
+      <div class="lcard rev" style="transition-delay:.14s" onclick="navigate('lists-detail&id=palme')"><div class="lcov"><div style="background-image:url('https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg')"></div><div style="background-image:url('https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg')"></div><div style="background:#111"></div><div style="background:#1a1a1a"></div></div><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h3>Palme d'Or Winners</h3><p class="tb" style="font-size:12px">12 Films · Community</p></div><button class="btn btng sm" style="padding:5px 9px;font-size:11px" onclick="event.stopPropagation();openM('edit-list-modal')">✎</button></div></div>
+      <div onclick="openM('new-list-modal')"><div class="nlbtn">+ Create New List</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LIST DETAIL ══ -->
+<div id="view-lists-detail" class="view">
+  <div class="ph"><div style="display:flex;align-items:flex-start;gap:22px;flex-wrap:wrap"><div class="ldcov" id="ldcov"></div><div style="flex:1"><h1 class="tp" id="ldtitle"></h1><p class="tb" style="margin-top:5px;font-size:13px" id="ldmeta"></p><p class="tb" style="margin-top:9px;font-size:14px" id="lddesc"></p><div style="display:flex;gap:7px;margin-top:16px"><button class="btn btna sm" onclick="openM('new-list-modal')"><i class="ph-bold ph-plus"></i> Add Films</button><button class="btn btng sm" onclick="openM('edit-list-modal')">Edit List</button></div></div></div></div>
+  <div class="pc"><h2 class="ts">Films</h2><div class="mosaic" id="ldgrid"></div></div>
+</div>
+
+<!-- ══ AI ENGINE ══ -->
+<div id="view-ai" class="view">
+  <div class="ph" style="text-align:center;border:none"><h1 class="tp gt">Cinematic Engine</h1><p class="tb" style="margin-top:5px">AI analysis of your diary to surface your next obsession.</p></div>
+  <div class="pc aiwrap" id="aiwrap">
+    <div class="aiorb" id="aiorb"><i class="ph-duotone ph-sparkle"></i></div>
+    <button class="aigbtn" id="aibtn" onclick="runAI()"><i class="ph-bold ph-magic-wand"></i> Analyze My Taste</button>
+    <div id="ai-loader"><i class="ph-bold ph-spinner-gap spin" style="margin-right:5px"></i> Scanning 412 films…</div>
+    <div id="ai-result">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,122,24,.08),rgba(49,145,151,.08));border-radius:24px;pointer-events:none"></div>
+      <div class="airinn">
+        <img src="https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg" alt="Rec">
+        <div><div class="mbadge">98% Match</div><h2 style="font-family:var(--sr);font-size:26px;font-weight:700;margin-bottom:7px" id="ai-rec-title">The Dark Knight</h2><p class="tb" style="font-size:13px;margin-bottom:16px" id="ai-rec-text"></p><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btnp sm" onclick="navigate('movie&id=dark-knight')">View Details</button><button class="btn btng sm" onclick="openLogModal()"><i class="ph-bold ph-plus"></i> Log Film</button></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MOVIE DETAIL ══ -->
+<div id="view-movie" class="view">
+  <div class="mdwrap">
+    <div class="mdart" id="mdart"></div>
+    <div class="mdinn">
+      <div class="mdflex">
+        <div class="mdleft">
+          <img src="" id="mdposter" class="mdpost" alt="Poster">
+          <button class="btn btnp" style="justify-content:center" onclick="openLogModal()"><i class="ph-bold ph-check-circle"></i> Log / Review</button>
+          <button class="btn btng" id="watchlist-btn" style="justify-content:center" onclick="toggleWatchlist()"><i class="ph-bold ph-bookmark-simple"></i> Watchlist</button>
+          <div class="sndp" id="sndp">
+            <div class="sndinf"><div class="sndt" id="sndt">Soundtrack</div><div class="snds" id="snds">–</div></div>
+            <div class="sndctls">
+              <button class="sndbtn" onclick="sndMute()"><i class="ph-bold ph-speaker-slash" id="sndmico"></i></button>
+              <button class="sndbtn" id="sndpbtn" onclick="sndPlay()"><i class="ph-bold ph-play" id="sndpico"></i></button>
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mu);margin-bottom:7px">Stills &amp; BTS</p>
+            <div class="stgrid" id="stgrid"></div>
+          </div>
+        </div>
+        <div class="mdinfo">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mu);margin-bottom:6px" id="mdlogline"></div>
+          <h1 class="th sel" style="font-size:clamp(28px,4.5vw,50px)" id="mdtitle"></h1>
+          <div class="mdmeta"><span id="mdyear"></span><div class="mddot"></div><span id="mddir"></span><div class="mddot"></div><span>★ <span id="mdrating"></span>/5</span></div>
+          <div class="rrow" id="mdext"></div>
+          <p class="tb sel" style="font-size:15px;line-height:1.7;max-width:660px" id="mdsynopsis"></p>
+          <div class="sdiv"></div>
+          <h3 style="font-family:var(--sr);font-size:18px;margin-bottom:12px">From the cast &amp; critics</h3>
+          <div id="mdquotes"></div>
+          <div class="sdiv"></div>
+          <div class="whycard"><div class="whylbl">✦ Why you'll love this</div><p class="tb" style="font-size:13px" id="mdwhy"></p></div>
+          <div class="ffcard"><div class="fflbl">★ Fun Fact</div><p id="fftext" style="font-size:13px;line-height:1.65;color:var(--text)"></p><button class="btn btng sm" style="margin-top:11px" onclick="nextFF()"><i class="ph-bold ph-arrow-clockwise"></i> Next</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<!-- MODALS -->
+<div id="log-modal" class="mov" onclick="if(event.target===this)closeM('log-modal')">
+  <div class="mcard"><div class="mhdr"><h2>Log a Film</h2><button class="xbtn" onclick="closeM('log-modal')"><i class="ph-bold ph-x"></i></button></div>
+  <h3 style="font-family:var(--sr);font-size:22px;margin-bottom:16px" id="logtitle">Movie</h3>
+  <div class="frow"><label>Rating</label><div class="starrow" id="logstars"><i class="ph-fill ph-star" data-v="1"></i><i class="ph-fill ph-star" data-v="2"></i><i class="ph-fill ph-star" data-v="3"></i><i class="ph-fill ph-star" data-v="4"></i><i class="ph-fill ph-star" data-v="5"></i></div></div>
+  <div class="frow"><label>Date Watched</label><input class="finp" type="date" value="2026-03-05"></div>
+  <div class="frow"><label>Review</label><textarea class="finp" placeholder="Your thoughts…"></textarea></div>
+  <button class="btn btnp" style="width:100%;justify-content:center" onclick="closeM('log-modal')"><i class="ph-bold ph-check"></i> Save to Diary</button></div>
+</div>
+<div id="profile-modal" class="mov" onclick="if(event.target===this)closeM('profile-modal')">
+  <div class="mcard"><div class="mhdr"><h2>Edit Profile</h2><button class="xbtn" onclick="closeM('profile-modal')"><i class="ph-bold ph-x"></i></button></div>
+  <div class="frow"><label>Name</label><input class="finp" id="editname" value="Rizly"></div>
+  <div class="frow"><label>Bio</label><input class="finp" id="editbio" value="Film Student at UNPAD"></div>
+  <div class="frow"><label>Location</label><input class="finp" id="editloc" value="Bandung, Indonesia"></div>
+  <button class="btn btnp" style="width:100%;justify-content:center" onclick="saveProfile()"><i class="ph-bold ph-check"></i> Save</button></div>
+</div>
+<div id="edit-fav-modal" class="mov" onclick="if(event.target===this)closeM('edit-fav-modal')">
+  <div class="mcard"><div class="mhdr"><h2>Edit Favorites</h2><button class="xbtn" onclick="closeM('edit-fav-modal')"><i class="ph-bold ph-x"></i></button></div>
+  <p class="tb" style="margin-bottom:14px;font-size:13px">Select up to 4 all-time favorites.</p>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:16px">
+    <div style="aspect-ratio:2/3;border-radius:9px;background-image:url('https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg');background-size:cover;border:2px solid var(--ac)"></div>
+    <div style="aspect-ratio:2/3;border-radius:9px;background-image:url('https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg');background-size:cover;border:2px solid var(--ac)"></div>
+    <div style="aspect-ratio:2/3;border-radius:9px;background-image:url('https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg');background-size:cover;border:2px solid var(--ac)"></div>
+    <div style="aspect-ratio:2/3;border-radius:9px;background-image:url('https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg');background-size:cover;border:2px solid transparent;opacity:.5"></div>
+  </div>
+  <button class="btn btnp" style="width:100%;justify-content:center" onclick="closeM('edit-fav-modal')">Save</button></div>
+</div>
+<div id="new-list-modal" class="mov" onclick="if(event.target===this)closeM('new-list-modal')">
+  <div class="mcard"><div class="mhdr"><h2>Create List</h2><button class="xbtn" onclick="closeM('new-list-modal')"><i class="ph-bold ph-x"></i></button></div>
+  <div class="frow"><label>Name</label><input class="finp" placeholder="e.g. Best Sci-Fi of the Decade"></div>
+  <div class="frow"><label>Description</label><textarea class="finp" placeholder="What's this list about?"></textarea></div>
+  <div class="frow"><label>Visibility</label><select class="finp"><option>Public</option><option>Private</option></select></div>
+  <button class="btn btnp" style="width:100%;justify-content:center" onclick="closeM('new-list-modal')">Create</button></div>
+</div>
+<div id="edit-list-modal" class="mov" onclick="if(event.target===this)closeM('edit-list-modal')">
+  <div class="mcard"><div class="mhdr"><h2>Edit List</h2><button class="xbtn" onclick="closeM('edit-list-modal')"><i class="ph-bold ph-x"></i></button></div>
+  <div class="frow"><label>Name</label><input class="finp" value="Cinematic Masterpieces"></div>
+  <div class="frow"><label>Description</label><textarea class="finp">A collection of films that define the art of cinema.</textarea></div>
+  <div style="display:flex;gap:7px"><button class="btn btnp" style="flex:1;justify-content:center" onclick="closeM('edit-list-modal')">Save</button><button class="btn btng" style="color:#ef4444;border-color:rgba(239,68,68,.25)">Delete</button></div></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+const TMDB = '849b72ab31fb69f120ef8c5df5c5f7d0';
+const TMDB_IMG = 'https://image.tmdb.org/t/p/';
+
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+const MOVIES = [
+  {id:'quiet-love',title:'The Quiet Love',year:'2025',director:'Independent',rating:'4.2',tmdbId:null,
+   logline:'Two strangers find solace in the silence between words.',
+   synopsis:'Set in rain-soaked Indonesia, The Quiet Love follows Dira, a grieving composer, and Sena, a wandering photographer, orbiting each other across one rainy season. A debut film of astonishing restraint.',
+   quotes:[{t:'A film that breathes.',a:'Cahaya Cinema',r:'Critic'}],
+   imdb:'7.8',rt:88,videos:[{label:'Trailer',id:'zSWdZVtXT7E'}],
+   poster:'https://images.unsplash.com/photo-1514316454349-750a7fd3da3a?w=500&q=80',
+   stills:['https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=780','https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=780','https://images.unsplash.com/photo-1485846234645-a62644f84728?w=780','https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=780'],
+   theme:{colors:['#3d1c5e','#c0392b','#1a0a2e'],speed:.45,behavior:'gentle'},
+   why:'Based on your love of contemplative, emotionally rich cinema.',
+   sndId:'dh3bleXHC0Q',sndTitle:'Original Score',sndComp:'Nindra Kurniawan',
+   funFacts:['Shot entirely in 17 days during Indonesia\'s real monsoon.','The lead actress improvised 70% of her dialogue.','The score was composed on a single out-of-tune piano found in Bandung.']},
+
+  {id:'interstellar',title:'Interstellar',year:'2014',director:'Christopher Nolan',rating:'4.7',tmdbId:157336,
+   logline:'Love is the one thing that transcends time and space.',
+   synopsis:'In a dying Earth, former NASA pilot Cooper travels through a wormhole to find humanity a new home. Leaving behind his daughter Murph, he faces black holes, time dilation, and the limits of human understanding.',
+   quotes:[{t:'Hans Zimmer\'s score alone is worth the price of admission.',a:'Roger Ebert.com',r:''},{t:'We had to solve equations never solved before to make Gargantua accurate.',a:'Kip Thorne',r:'Scientific Advisor'}],
+   imdb:'8.7',rt:73,videos:[{label:'Teaser',id:'0vxOhd4qlnA'},{label:'Trailer',id:'zSWdZVtXT7E'},{label:'BTS',id:'zSWdZVtXT7E'}],
+   poster:'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
+   stills:['https://image.tmdb.org/t/p/w780/xu9zaAevzQ5nnrsXN6JcahLnG4i.jpg','https://image.tmdb.org/t/p/w780/bHarw8xerTlo8fLkPyv8OISkRDW.jpg','https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=780','https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=780'],
+   theme:{colors:['#0d1b4b','#1565c0','#7b1fa2','#00acc1','#0a0a1a'],speed:.35,behavior:'orbital'},
+   why:'Your 4.5+ star ratings on Nolan\'s work and interest in philosophical sci-fi make this essential.',
+   sndId:'mxUAEoVPHzA',sndTitle:'Cornfield Chase',sndComp:'Hans Zimmer',
+   funFacts:['The Gargantua black hole led to a real peer-reviewed scientific paper.','The wormhole correctly appears as a sphere, as actual physics dictates.','McConaughey asked to really cry in the NASA video scene. First take. Done.','The corn field was grown for the film — then sold, turning a profit.']},
+
+  {id:'dune2',title:'Dune: Part Two',year:'2024',director:'Denis Villeneuve',rating:'4.5',tmdbId:693134,
+   logline:'The legend of Paul Atreides will be written in blood and sand.',
+   synopsis:'Paul Atreides joins the Fremen in the deep desert, falling in love with Chani while growing into the prophesied Lisan al Gaib. Forced to choose between love and duty, his rise threatens a holy war across the universe.',
+   quotes:[{t:'An immersive, overwhelming experience — cinema at its most operatic.',a:'The Guardian',r:'5/5'},{t:'I wanted Lawrence of Arabia in space.',a:'Denis Villeneuve',r:'Director'}],
+   imdb:'8.5',rt:92,videos:[{label:'Official Trailer',id:'Way9Dexny3w'},{label:'Final Trailer',id:'Way9Dexny3w'},{label:'Featurette',id:'Way9Dexny3w'}],
+   poster:'https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg',
+   stills:['https://image.tmdb.org/t/p/w780/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg','https://images.unsplash.com/photo-1509023464722-18d996393ca8?w=780','https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=780','https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=780'],
+   theme:{colors:['#c8860a','#8b4513','#d4a017','#3d1c0a'],speed:.6,behavior:'desert'},
+   why:'You rated Part One highly and love director-driven epics. This is even more ambitious.',
+   sndId:'9IVBfRlhUGs',sndTitle:'Arrival in Arrakeen',sndComp:'Hans Zimmer',
+   funFacts:['Shot in Abu Dhabi\'s Liwa Desert at temperatures exceeding 50°C.','Timothée Chalamet spent 6 months on Fremen combat choreography.','Hans Zimmer invented entirely new instruments based on the novel\'s sounds.','600 tonnes of real black sand were shipped to Budapest for the arena sequence.']},
+
+  {id:'oppenheimer',title:'Oppenheimer',year:'2023',director:'Christopher Nolan',rating:'4.4',tmdbId:872585,
+   logline:'The man who became Death. The man who built the future.',
+   synopsis:'Theoretical physicist J. Robert Oppenheimer leads the Manhattan Project to build the world\'s first atomic bomb. His success transforms into a political weapon — a triptych of ambition, conscience, and consequence.',
+   quotes:[{t:'Now I am become Death, the destroyer of worlds.',a:'J. Robert Oppenheimer',r:'After Trinity'},{t:'Cillian Murphy carries the entire weight of the 20th century on his face.',a:'The New Yorker',r:''}],
+   imdb:'8.9',rt:93,videos:[{label:'Teaser',id:'uYPbbksJxIg'},{label:'Trailer',id:'uYPbbksJxIg'},{label:'IMAX',id:'uYPbbksJxIg'}],
+   poster:'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',
+   stills:['https://image.tmdb.org/t/p/w780/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg','https://images.unsplash.com/photo-1602526430780-782d6b1783fa?w=780','https://images.unsplash.com/photo-1571019613576-2b22c76fd955?w=780','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=780'],
+   theme:{colors:['#ff4500','#ff8c00','#ffd700','#8b0000','#1a0000'],speed:1.2,behavior:'explosive'},
+   why:'You\'ve rated multiple Nolan films above 4.4. This may be his most emotionally devastating work.',
+   sndId:'1FDFBWGXExA',sndTitle:'Can You Hear the Music',sndComp:'Ludwig Göransson',
+   funFacts:['The Trinity test explosion was practical — no CGI for the detonation.','Cillian Murphy prepared by reading every book written about Oppenheimer.','Göransson composed 80 hours before selecting the final 3 hours.','Courtroom scenes were shot in order so actors felt the psychological weight accumulate.']},
+
+  {id:'lambs',title:'The Silence of the Lambs',year:'1991',director:'Jonathan Demme',rating:'4.8',tmdbId:274,
+   logline:'One mind to catch a monster. Another to keep her from becoming one.',
+   synopsis:'FBI trainee Clarice Starling must interview imprisoned cannibal psychiatrist Hannibal Lecter to help profile serial killer Buffalo Bill. Their psychological chess match is unlike anything else in film history.',
+   quotes:[{t:'A census taker tried to test me. I ate his liver with some fava beans and a nice chianti.',a:'Hannibal Lecter',r:'Hopkins'},{t:'Hopkins creates horror with nothing more than a stare and a syllable.',a:'Rolling Stone',r:''}],
+   imdb:'8.6',rt:95,videos:[{label:'Trailer',id:'W6Mm8Sbe__o'},{label:'30th Anniversary',id:'W6Mm8Sbe__o'}],
+   poster:'https://image.tmdb.org/t/p/w500/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg',
+   stills:['https://images.unsplash.com/photo-1534809027769-b00d750a6bac?w=780','https://images.unsplash.com/photo-1527261834078-9b37d35a4a32?w=780','https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=780','https://images.unsplash.com/photo-1485846234645-a62644f84728?w=780'],
+   theme:{colors:['#1b5e20','#004d40','#212121','#37474f'],speed:.7,behavior:'heartbeat'},
+   why:'Your psychological thriller radar is tuned — this is the genre\'s absolute pinnacle.',
+   sndId:'RydnA_5PpMU',sndTitle:'Main Theme',sndComp:'Howard Shore',
+   funFacts:['Hopkins is on screen only 16 minutes — yet won Best Actor.','Jodie Foster wore actual FBI-issued attire.','The pit scene used a real pit, dug inside the studio.','Hopkins blinked less than once per minute as Lecter — a deliberate choice.']},
+
+  {id:'parasite',title:'Parasite',year:'2019',director:'Bong Joon Ho',rating:'4.6',tmdbId:496243,
+   logline:'All of this is metaphor.',
+   synopsis:'The Kim family infiltrates the wealthy Park household in a scheme that spirals from darkly comic to something far more dangerous when the basement reveals its own terrible secrets.',
+   quotes:[{t:'Once you overcome the one-inch barrier of subtitles, you\'ll be introduced to so many more amazing films.',a:'Bong Joon Ho',r:'Director'},{t:'The most precise social satire since Dr. Strangelove.',a:'The Atlantic',r:''}],
+   imdb:'8.5',rt:99,videos:[{label:'Trailer',id:'5xH0HfJHsaY'},{label:'Q&A',id:'5xH0HfJHsaY'}],
+   poster:'https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg',
+   stills:['https://image.tmdb.org/t/p/w780/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg','https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=780','https://images.unsplash.com/photo-1464207687429-7505649dae38?w=780','https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=780'],
+   theme:{colors:['#1a1a2e','#0f3460','#e94560','#533483'],speed:.8,behavior:'split'},
+   why:'If you love intelligent, genre-subverting cinema, this is essential — and shocking.',
+   sndId:'Oig3mFqUlYw',sndTitle:'Belt of Faith',sndComp:'Jung Jae-il',
+   funFacts:['The semi-basement set took 3 months to build — the flooding scene used real water.','Bong carried the core idea for 10 years before writing the screenplay.','The Park house is deliberately architecturally impossible by design.','Every single frame was storyboarded in detail before shooting.']},
+
+  {id:'dark-knight',title:'The Dark Knight',year:'2008',director:'Christopher Nolan',rating:'4.9',tmdbId:155,
+   logline:'Some men just want to watch the world burn.',
+   synopsis:'The Joker, a criminal with no plan except chaos, systematically dismantles Harvey Dent\'s crusade and Batman\'s moral code, forcing the Dark Knight to confront whether a city\'s hero must become its monster.',
+   quotes:[{t:'Why so serious?',a:'The Joker',r:'Heath Ledger'},{t:'Heath Ledger\'s Joker is the most haunting performance in any comic book film.',a:'Time Magazine',r:''},{t:'I wanted the Joker to feel like a force of nature — not a supervillain, but an idea.',a:'Christopher Nolan',r:'Director'}],
+   imdb:'9.0',rt:94,videos:[{label:'Teaser',id:'EXeTwQWrcwY'},{label:'Trailer',id:'EXeTwQWrcwY'},{label:'TV Spot',id:'EXeTwQWrcwY'}],
+   poster:'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
+   stills:['https://image.tmdb.org/t/p/w780/nMKdUFJU62Xm0lgZpFpzQAWMEUW.jpg','https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=780','https://images.unsplash.com/photo-1531259683007-016a7b628fc3?w=780','https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=780'],
+   theme:{colors:['#0a1628','#1565c0','#ff8f00','#1a1a1a'],speed:.9,behavior:'chaos'},
+   why:'As a Nolan loyalist with a taste for psychological complexity, this is the crown jewel.',
+   sndId:'EYfmfT8OQKI',sndTitle:'Why So Serious',sndComp:'Hans Zimmer',
+   funFacts:['Heath Ledger kept a journal written entirely in character as the Joker for months.','The truck flip in Chicago was done practically — a real semi-truck, 6 takes.','Ledger directed his own close-up scenes — Nolan gave him complete control.','The hospital explosion was a real demolition. Ledger\'s pause was him waiting for delayed charges — staying in character throughout.']}
+];
+
+const LISTS = {
+  masterpieces:{title:'Cinematic Masterpieces',meta:'24 Films · Rizly',desc:'Films that define the art of cinema.',cover:'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',movies:['oppenheimer','interstellar','lambs','parasite','dune2','dark-knight']},
+  lsf:{title:'LSF Internship Watchlist',meta:'8 Films · Rizly',desc:'Films for my LSF internship analysis.',cover:'https://image.tmdb.org/t/p/w500/1XnnBq4DUS2p7P7aHjB7E206QxP.jpg',movies:['quiet-love','lambs']},
+  palme:{title:"Palme d'Or Winners",meta:'12 Films · Community',desc:"The best from the Cannes Film Festival.",cover:'https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg',movies:['parasite','lambs']}
+};
+
+const REVIEWS = [
+  {user:'Sarah',avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80',movieId:'dune2',movieTitle:'Dune: Part Two',stars:4.5,text:'Denis Villeneuve does it again. The sheer scale and sound design had my seat shaking. The way he uses silence as a weapon is extraordinary. Lisan al Gaib!',likes:42,comments:[{u:'Diki',t:'Completely agree. The IMAX mix is a religious experience.'},{u:'Maya',t:'Chani carried this whole film.'}]},
+  {user:'Diki',avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80',movieId:'lambs',movieTitle:'The Silence of the Lambs',stars:5,text:'Rewatched this for a masterclass in tension. Hopkins doesn\'t blink, doesn\'t smile, just exists as pure malevolence. The quid pro quo dynamic is unmatched.',likes:78,comments:[{u:'Sarah',t:'16 minutes. Best Actor. Legend.'},{u:'Maya',t:'Best psychological exchange in cinema.'}]},
+  {user:'Maya',avatar:'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80',movieId:'parasite',movieTitle:'Parasite',stars:5,text:'Mind-blowing. The way it shifts genres three times without warning is pure genius. Bong sets up every single payoff in the first 20 minutes.',likes:121,comments:[{u:'Diki',t:'First non-English Best Picture. Deserved.'},{u:'Sarah',t:'The smell motif!!! I think about it weekly.'}]}
+];
+
+const LOG_EXTRA = [
+  {id:'fightclub',title:'Fight Club',year:'1999',rating:4.8,poster:'https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg'},
+  {id:'2001',title:'2001: A Space Odyssey',year:'1968',rating:4.9,poster:'https://image.tmdb.org/t/p/w500/ve72VxNqjIqd6paQmn3LMGEwosP.jpg'},
+  {id:'taxi',title:'Taxi Driver',year:'1976',rating:4.7,poster:'https://image.tmdb.org/t/p/w500/ekstpH614fwDX8DUln1a2Opz0N8.jpg'},
+  {id:'mulh',title:'Mulholland Drive',year:'2001',rating:4.6,poster:'https://image.tmdb.org/t/p/w500/uCxkRlqJrNWETZ2IBHqALKQ2Hut.jpg'},
+  {id:'shining',title:'The Shining',year:'1980',rating:4.7,poster:'https://image.tmdb.org/t/p/w500/b6ko0IKC8MdYBBPkkA1aBPLe2yz.jpg'},
+  {id:'goodfellas',title:'Goodfellas',year:'1990',rating:4.8,poster:'https://image.tmdb.org/t/p/w500/aKuFiU82s5ISJpGZp7YkIr3kCUd.jpg'},
+  {id:'amelie',title:'Amélie',year:'2001',rating:4.6,poster:'https://image.tmdb.org/t/p/w500/f0TUPaXNpFvGxNQxhIEyHj73bvj.jpg'},
+  {id:'inception',title:'Inception',year:'2010',rating:4.5,poster:'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'},
+];
+const ALL_LOG = [...MOVIES.map(m=>({id:m.id,title:m.title,year:m.year,rating:parseFloat(m.rating),poster:m.poster})),...LOG_EXTRA];
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let curMovie=MOVIES[0],curReview=REVIEWS[0];
+let ytPlayer=null,sndPlayer=null;
+let isMuted=true,isPlaying=true;
+let sndMuted=true,sndIsPlaying=false;
+let ffIdx=0,ffTimer=null;
+let fabOpen=false,logRating=0,liked=false;
+let navStack=[],curVidIdx=0;
+let obStep=0;
+const obData={};
+const IS_TOUCH_DEVICE=window.matchMedia('(pointer:coarse)').matches||('ontouchstart' in window);
+const IS_LOW_POWER=IS_TOUCH_DEVICE||window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let isPopNavigating=false;
+
+// ══════════════════════════════════════════
+// CANVAS BG
+// ══════════════════════════════════════════
+const canvas=document.getElementById('bg-canvas');
+const ctx=canvas.getContext('2d');
+let blobs=[],mouse={x:innerWidth/2,y:innerHeight/2};
+let bgTheme={colors:['#0d1b4b','#1a0a2e','#0a1628'],speed:.4,behavior:'default'};
+let analyzing=false;
+
+function resizeCanvas(){canvas.width=innerWidth;canvas.height=innerHeight}
+function makeBlobs(t){
+  const cols=(IS_LOW_POWER?t.colors.slice(0,Math.min(2,t.colors.length)):t.colors);
+  blobs=cols.map((col,i)=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,r:180+Math.random()*280,color:col||t.colors[i],ph:Math.random()*Math.PI*2,pp:Math.random()*Math.PI*2}));
+}
+function h2r(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]}
+function drawBG(){
+  if(IS_LOW_POWER){drawBG._skip=(drawBG._skip||0)+1;if(drawBG._skip%2===1)return;}
+  const W=canvas.width,H=canvas.height,t=Date.now()/1000;
+  const spd=bgTheme.speed*(analyzing?3.5:1);
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#07070a';ctx.fillRect(0,0,W,H);
+  blobs.forEach((b,i)=>{
+    b.ph+=.005*spd;b.pp+=.009*spd;
+    const pulse=1+Math.sin(b.pp)*.15;
+    const dx=mouse.x-b.x,dy=mouse.y-b.y,dist=Math.hypot(dx,dy)||1;
+    if(dist<700){b.vx+=dx/dist*.006*spd;b.vy+=dy/dist*.006*spd}
+    if(bgTheme.behavior==='orbital'){b.vx+=Math.cos(b.ph+i*1.3)*.025;b.vy+=Math.sin(b.ph+i*1.3)*.025}
+    else if(bgTheme.behavior==='explosive'){b.vx+=(Math.random()-.5)*.05*spd;b.vy+=(Math.random()-.5)*.05*spd}
+    else if(bgTheme.behavior==='heartbeat'){const hb=Math.sin(t*2.5+i)*.016;b.vx+=hb;b.vy+=hb}
+    else if(bgTheme.behavior==='desert'){b.vx+=Math.sin(b.ph*.3+i)*.022;b.vy+=Math.cos(b.ph*.7)*.009}
+    else if(bgTheme.behavior==='split'){b.vx+=i%2===0?.016:-.016;b.vy+=Math.sin(b.ph)*.02}
+    else if(bgTheme.behavior==='chaos'){b.vx+=(Math.random()-.5)*.07*spd;b.vy+=(Math.random()-.5)*.07*spd}
+    else{b.vx+=Math.sin(b.ph*.5+i)*.018;b.vy+=Math.cos(b.ph*.5+i)*.015}
+    b.vx*=.975;b.vy*=.975;
+    b.vx=Math.max(-1.8,Math.min(1.8,b.vx));b.vy=Math.max(-1.8,Math.min(1.8,b.vy));
+    b.x+=b.vx;b.y+=b.vy;
+    if(b.x<-b.r)b.x=W+b.r;if(b.x>W+b.r)b.x=-b.r;
+    if(b.y<-b.r)b.y=H+b.r;if(b.y>H+b.r)b.y=-b.r;
+    try{const[r,g,bv]=h2r(b.color);const gr=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r*pulse);
+    gr.addColorStop(0,`rgba(${r},${g},${bv},.36)`);gr.addColorStop(.5,`rgba(${r},${g},${bv},.12)`);gr.addColorStop(1,`rgba(${r},${g},${bv},0)`);
+    ctx.fillStyle=gr;ctx.beginPath();ctx.ellipse(b.x,b.y,b.r*pulse,b.r*.7*pulse,b.ph*.2,0,Math.PI*2);ctx.fill()}catch(e){}
+  });
+  ctx.fillStyle='rgba(7,7,10,.44)';ctx.fillRect(0,0,W,H);
+}
+(function anim(){drawBG();requestAnimationFrame(anim)})();
+function setTheme(t){bgTheme=t;makeBlobs(t)}
+window.addEventListener('resize',()=>{resizeCanvas();makeBlobs(bgTheme)});
+window.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+resizeCanvas();makeBlobs(bgTheme);
+
+// ══════════════════════════════════════════
+// CURSOR
+// ══════════════════════════════════════════
+const ring=document.getElementById('cring'),cdot=document.getElementById('cdot');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{if(IS_TOUCH_DEVICE)return;mx=e.clientX;my=e.clientY;cdot.style.left=mx+'px';cdot.style.top=my+'px'});
+(function animCur(){if(IS_TOUCH_DEVICE)return;rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animCur)})();
+function bindCursor(){
+  if(IS_TOUCH_DEVICE)return;
+  document.querySelectorAll('button,a,[onclick]:not(p):not(h1):not(div.tb),.pc2,.ti,.fi,.fcard,.lcard,.bc,.mi,.lgi,.gbtn,.fb2,.vtab').forEach(el=>{
+    if(!el._cb){el._cb=1;
+      el.addEventListener('mouseenter',()=>document.body.classList.add('clh'));
+      el.addEventListener('mouseleave',()=>document.body.classList.remove('clh'));
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// SCROLL + FAB
+// ══════════════════════════════════════════
+const tnav=document.getElementById('tnav');
+window.addEventListener('scroll',()=>{
+  const sc=scrollY>60;
+  tnav.classList.toggle('scrolled',sc);
+  document.body.classList.toggle('nsc',sc);
+});
+function toggleFab(){
+  fabOpen=!fabOpen;
+  document.getElementById('fabdd').classList.toggle('open',fabOpen);
+  document.getElementById('fabicon').className=fabOpen?'ph-bold ph-x':'ph-bold ph-list';
+}
+
+// ══════════════════════════════════════════
+// BACK BUTTON
+// ══════════════════════════════════════════
+const VIEWS_LABELS={home:'Discover',diary:'Profile',filmlog:'My Films',community:'Community',lists:'Lists',ai:'AI Engine'};
+function updateBack(v){
+  const bb=document.getElementById('backbtn');
+  if(v==='home'||navStack.length<2){bb.classList.remove('vis');return}
+  const prev=navStack[navStack.length-2];
+  document.getElementById('backlbl').textContent=VIEWS_LABELS[prev]||'Back';
+  bb.classList.add('vis');
+}
+function goBack(){
+  if(window.history.length>1){window.history.back();return}
+  if(navStack.length<2)return;
+  navStack.pop();const prev=navStack[navStack.length-1];navStack.pop();navigate(prev);
+}
+
+// ══════════════════════════════════════════
+// YOUTUBE PLAYER
+// ══════════════════════════════════════════
+function loadYTAPI(){const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s)}
+window.onYouTubeIframeAPIReady=function(){
+  ytPlayer=new YT.Player('yt-player',{
+    videoId:MOVIES[0].videos[0].id,
+    playerVars:{autoplay:1,mute:1,controls:0,modestbranding:1,rel:0,iv_load_policy:3,disablekb:1,playlist:MOVIES[0].videos[0].id,loop:1},
+    events:{
+      onReady:e=>{e.target.mute();e.target.playVideo()},
+      onStateChange:e=>{if(e.data===0){e.target.seekTo(0);e.target.playVideo()}}
+    }
+  });
+  sndPlayer=new YT.Player('snd-yt-player',{
+    videoId:'',playerVars:{autoplay:0,mute:1,controls:0,modestbranding:1,rel:0},
+    events:{onStateChange:e=>{if(e.data===0){e.target.seekTo(0);if(sndIsPlaying)e.target.playVideo()}}}
+  });
+};
+loadYTAPI();
+
+function toggleMute(){
+  if(!ytPlayer)return;
+  if(ytPlayer.isMuted()){ytPlayer.unMute();isMuted=false;document.getElementById('muteico').className='ph-bold ph-speaker-high'}
+  else{ytPlayer.mute();isMuted=true;document.getElementById('muteico').className='ph-bold ph-speaker-slash'}
+}
+function togglePlay(){
+  if(!ytPlayer)return;
+  if(ytPlayer.getPlayerState()===1){ytPlayer.pauseVideo();isPlaying=false;document.getElementById('playico').className='ph-bold ph-play'}
+  else{ytPlayer.playVideo();isPlaying=true;document.getElementById('playico').className='ph-bold ph-pause'}
+}
+function pauseHeroVideo(){
+  if(ytPlayer&&ytPlayer.pauseVideo&&isPlaying){ytPlayer.pauseVideo()}
+}
+function switchVideo(movie,idx){
+  curVidIdx=idx;
+  const vid=movie.videos[idx];
+  if(ytPlayer&&ytPlayer.loadVideoById){ytPlayer.loadVideoById({videoId:vid.id,startSeconds:0});if(isMuted)ytPlayer.mute()}
+  document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('av',i===idx));
+}
+
+// ══════════════════════════════════════════
+// SOUNDTRACK
+// ══════════════════════════════════════════
+function loadSnd(m){
+  document.getElementById('sndt').textContent=m.sndTitle||'Soundtrack';
+  document.getElementById('snds').textContent=m.sndComp||'';
+  sndIsPlaying=false;sndMuted=true;
+  document.getElementById('sndpico').className='ph-bold ph-play';
+  document.getElementById('sndpbtn').classList.remove('playing');
+  document.getElementById('sndmico').className='ph-bold ph-speaker-slash';
+  if(sndPlayer&&sndPlayer.cueVideoById&&m.sndId)sndPlayer.cueVideoById({videoId:m.sndId,startSeconds:0});
+}
+function sndPlay(){
+  if(!sndPlayer||!sndPlayer.playVideo)return;
+  if(sndIsPlaying){sndPlayer.pauseVideo();sndIsPlaying=false;document.getElementById('sndpico').className='ph-bold ph-play';document.getElementById('sndpbtn').classList.remove('playing')}
+  else{sndPlayer.playVideo();sndPlayer.unMute();sndIsPlaying=true;sndMuted=false;document.getElementById('sndpico').className='ph-bold ph-pause';document.getElementById('sndpbtn').classList.add('playing');document.getElementById('sndmico').className='ph-bold ph-speaker-high'}
+}
+function sndMute(){
+  if(!sndPlayer)return;
+  if(sndMuted){sndPlayer.unMute();sndMuted=false;document.getElementById('sndmico').className='ph-bold ph-speaker-high'}
+  else{sndPlayer.mute();sndMuted=true;document.getElementById('sndmico').className='ph-bold ph-speaker-slash'}
+}
+
+// ══════════════════════════════════════════
+// TMDB — fetch real backdrops
+// ══════════════════════════════════════════
+async function fetchTMDBStills(tmdbId){
+  if(!tmdbId)return null;
+  try{
+    const r=await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/images?api_key=${TMDB}&include_image_language=en,null`);
+    const d=await r.json();
+    const bds=(d.backdrops||[]).slice(0,4).map(b=>TMDB_IMG+'w780'+b.file_path);
+    return bds.length?bds:null;
+  }catch(e){return null}
+}
+
+// ══════════════════════════════════════════
+// CAROUSEL
+// ══════════════════════════════════════════
+function buildCarousel(){
+  const row=document.getElementById('poster-row');
+  MOVIES.forEach((m,i)=>{
+    const c=document.createElement('div');
+    c.className='pc2'+(i===0?' ap':'');
+    c.style.backgroundImage=`url('${m.poster}')`;
+    c.title=m.title;
+    if(!IS_TOUCH_DEVICE)c.addEventListener('mouseenter',()=>activatePoster(m,c));
+    c.addEventListener('click',()=>{populateMovie(m);navigate('movie')});
+    row.appendChild(c);
+  });
+}
+function activatePoster(m,card){
+  if(curMovie.id===m.id)return;
+  curMovie=m;
+  document.querySelectorAll('.pc2').forEach(c=>c.classList.remove('ap'));card.classList.add('ap');
+  const fade=document.getElementById('hfade'),cnt=document.getElementById('hcnt');
+  fade.style.opacity='1';cnt.style.opacity='0';cnt.style.transform='translateY(12px)';
+  setTimeout(()=>{applyHero(m);switchVideo(m,0);setTheme(m.theme);fade.style.opacity='0';cnt.style.opacity='1';cnt.style.transform='translateY(0)'},380);
+}
+function applyHero(m){
+  document.getElementById('htitle').textContent=m.title;
+  document.getElementById('hdesc').textContent=m.logline||m.synopsis.slice(0,110)+'…';
+  document.getElementById('logtitle').textContent=m.title;
+  const tabsEl=document.getElementById('vtabs');
+  tabsEl.innerHTML=m.videos.map((v,i)=>`<button class="vtab${i===0?' av':''}" onclick="switchVideo(MOVIES.find(x=>x.id==='${m.id}'),${i})">${v.label}</button>`).join('');
+}
+function goToHeroMovie(){populateMovie(curMovie);navigate('movie')}
+
+// ══════════════════════════════════════════
+// MOVIE DETAIL
+// ══════════════════════════════════════════
+async function populateMovie(m){
+  curMovie=m;
+  document.getElementById('mdart').style.backgroundImage=`url('${m.poster}')`;
+  document.getElementById('mdposter').src=m.poster;
+  document.getElementById('mdtitle').textContent=m.title;
+  document.getElementById('mdlogline').textContent=m.logline||'';
+  document.getElementById('mdyear').textContent=m.year;
+  document.getElementById('mddir').textContent='Directed by '+m.director;
+  document.getElementById('mdrating').textContent=m.rating;
+  document.getElementById('mdsynopsis').textContent=m.synopsis;
+  document.getElementById('mdwhy').textContent=m.why||'Based on your viewing history, you\'re likely to enjoy this.';
+  document.getElementById('logtitle').textContent=m.title;
+  document.getElementById('mdquotes').innerHTML=m.quotes.map(q=>`<div class="qb"><p>"${q.t}"</p><cite>— ${q.a}${q.r?', '+q.r:''}</cite></div>`).join('');
+  document.getElementById('mdext').innerHTML=`<a class="rchip" href="https://www.imdb.com/find?q=${encodeURIComponent(m.title)}" target="_blank" rel="noopener"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/IMDB_Logo_2016.svg" alt="IMDb"> ${m.imdb}/10</a><a class="rchip" href="https://www.rottentomatoes.com/search?search=${encodeURIComponent(m.title)}" target="_blank" rel="noopener">🍅 ${m.rt}%</a>`;
+  // Stills — try TMDB first, fall back to local
+  const sg=document.getElementById('stgrid');
+  sg.innerHTML='<div style="color:var(--mu);font-size:12px;padding:8px">Loading stills…</div>';
+  let stills=m.stills;
+  if(m.tmdbId){
+    const tmdbStills=await fetchTMDBStills(m.tmdbId);
+    if(tmdbStills&&tmdbStills.length)stills=tmdbStills;
+  }
+  sg.innerHTML=stills.slice(0,4).map(s=>`<img class="still" src="${s}" alt="Still" loading="lazy" onerror="this.style.display='none'">`).join('');
+  loadSnd(m);ffIdx=0;showFF(m);
+  if(ffTimer)clearInterval(ffTimer);
+  ffTimer=setInterval(nextFF,7000);
+  setTheme(m.theme);
+  syncWatchlistButton();
+}
+function showFF(m){
+  const el=document.getElementById('fftext');if(!el)return;
+  const f=(m||curMovie).funFacts;if(!f)return;
+  el.style.opacity='0';setTimeout(()=>{el.textContent=f[ffIdx%f.length];el.style.opacity='1'},270);
+}
+function nextFF(){ffIdx++;showFF(null)}
+
+// ══════════════════════════════════════════
+// NAVIGATE
+// ══════════════════════════════════════════
+function navigate(viewId){
+  if(fabOpen)toggleFab();
+  let base=viewId,param=null;
+  if(viewId.includes('&')){const p=viewId.split('&');base=p[0];param=p[1].split('=')[1]}
+  if(base==='movie'&&param){const m=MOVIES.find(x=>x.id===param)||MOVIES[0];populateMovie(m);base='movie'}
+  if(base==='lists-detail'&&param){populateList(param);base='lists-detail'}
+  if(base==='review'&&param){populateReview(parseInt(param));base='review'}
+  if(base==='filmlog')buildFilmLog();
+  // Stop hero video when leaving home
+  if(base!=='home')pauseHeroVideo();
+  // Stop soundtrack when leaving movie page
+  if(base!=='movie'&&sndPlayer&&sndPlayer.pauseVideo&&sndIsPlaying){sndPlayer.pauseVideo();sndIsPlaying=false;document.getElementById('sndpico').className='ph-bold ph-play';document.getElementById('sndpbtn').classList.remove('playing')}
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const el=document.getElementById('view-'+base);if(el)el.classList.add('active');
+  const navIds=['home','diary','filmlog','community','lists','ai'];
+  navIds.forEach(id=>{
+    [document.getElementById('n-'+id),document.getElementById('fn-'+id)].forEach(a=>{if(a)a.classList.toggle('an',id===base)});
+  });
+  navStack.push(base);if(navStack.length>12)navStack.shift();
+  updateBack(base);
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(()=>{initObserver();bindCursor()},100);
+  const themes={home:curMovie.theme,ai:{colors:['#7c3aed','#3d8ef8','#af002d','#319197'],speed:.7,behavior:'orbital'},diary:{colors:['#1a0040','#0a1a3a','#1a1a2e'],speed:.4,behavior:'gentle'},community:{colors:['#0d2a0d','#1a1a2e','#2a0d1a'],speed:.45,behavior:'gentle'},lists:{colors:['#1a1a0a','#1a1a2e','#0a1a2e'],speed:.3,behavior:'default'},filmlog:{colors:['#0a1a2e','#1a0a2e','#0a2e1a'],speed:.35,behavior:'default'}};
+  setTheme(themes[base]||curMovie.theme);
+}
+
+// ══════════════════════════════════════════
+// LIST DETAIL
+// ══════════════════════════════════════════
+function populateList(id){
+  const l=LISTS[id]||LISTS.masterpieces;
+  document.getElementById('ldcov').style.backgroundImage=`url('${l.cover}')`;
+  document.getElementById('ldtitle').textContent=l.title;
+  document.getElementById('ldmeta').textContent=l.meta;
+  document.getElementById('lddesc').textContent=l.desc;
+  const g=document.getElementById('ldgrid');g.innerHTML='';
+  l.movies.forEach(mid=>{const m=MOVIES.find(x=>x.id===mid);if(!m)return;const d=document.createElement('div');d.className='mi';d.innerHTML=`<div class="mp" style="background-image:url('${m.poster}')"></div><h4 style="font-size:12px;font-weight:600">${m.title}</h4><p style="font-size:11px;color:var(--mu)">${m.year}</p>`;d.onclick=()=>navigate('movie&id='+m.id);g.appendChild(d)});
+}
+
+// ══════════════════════════════════════════
+// FILM LOG
+// ══════════════════════════════════════════
+let logSort='all';
+function buildFilmLog(){
+  const g=document.getElementById('lgrid');
+  let films=[...ALL_LOG];
+  if(logSort==='rating')films.sort((a,b)=>b.rating-a.rating);
+  g.innerHTML='';
+  films.forEach(m=>{
+    const d=document.createElement('div');d.className='lgi';
+    d.innerHTML=`<div class="lgp" style="background-image:url('${m.poster}')"><div class="lgr">★${m.rating}</div></div><h4>${m.title}</h4><p>${m.year}</p>`;
+    d.onclick=()=>{const mv=MOVIES.find(x=>x.id===m.id);if(mv){populateMovie(mv);navigate('movie')}};
+    g.appendChild(d);
+  });
+}
+function filterLog(s,btn){
+  logSort=s;
+  document.querySelectorAll('.fb2').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');buildFilmLog();
+}
+
+// ══════════════════════════════════════════
+// REVIEW DETAIL
+// ══════════════════════════════════════════
+function populateReview(idx){
+  curReview=REVIEWS[idx]||REVIEWS[0];const r=curReview;
+  document.getElementById('rvav').style.backgroundImage=`url('${r.avatar}')`;
+  document.getElementById('rvtitle').textContent=r.user+"'s Review";
+  document.getElementById('rvsub').textContent=r.movieTitle+' · '+r.stars+' stars';
+  document.getElementById('rvposter').style.backgroundImage=`url('${MOVIES.find(m=>m.id===r.movieId)?.poster||''}')`;
+  document.getElementById('rvtext').textContent=r.text;
+  document.getElementById('rvstars').textContent='★'.repeat(Math.floor(r.stars))+(r.stars%1>=.5?'½':'');
+  liked=false;document.getElementById('likebtn').classList.remove('liked');document.getElementById('likecnt').textContent=r.likes;
+  document.getElementById('rvfilmbtn').onclick=()=>navigate('movie&id='+r.movieId);
+  const cl=document.getElementById('cmtlist');
+  cl.innerHTML=r.comments.map(c=>`<div style="background:rgba(17,17,20,.7);border:1px solid var(--bd);border-radius:11px;padding:11px 14px"><strong style="font-size:12px">${c.u}</strong><p style="font-size:12px;color:var(--mu);margin-top:2px;user-select:text">${c.t}</p></div>`).join('');
+}
+function toggleLike(){
+  liked=!liked;document.getElementById('likebtn').classList.toggle('liked',liked);
+  const lc=document.getElementById('likecnt');lc.textContent=parseInt(lc.textContent)+(liked?1:-1);
+}
+function postComment(){
+  const inp=document.getElementById('cmtinp');const val=inp.value.trim();if(!val)return;
+  const cl=document.getElementById('cmtlist');const d=document.createElement('div');
+  d.style.cssText='background:rgba(17,17,20,.7);border:1px solid var(--bd);border-radius:11px;padding:11px 14px;animation:vu .4s';
+  d.innerHTML=`<strong style="font-size:12px">${obData.name||'Rizly'}</strong><p style="font-size:12px;color:var(--mu);margin-top:2px;user-select:text">${val}</p>`;
+  cl.appendChild(d);inp.value='';
+}
+
+// ══════════════════════════════════════════
+// AI ENGINE — using Puter.js (free Claude API)
+// ══════════════════════════════════════════
+function runAI(){
+  const btn=document.getElementById('aibtn'),loader=document.getElementById('ai-loader'),result=document.getElementById('ai-result'),wrap=document.getElementById('aiwrap');
+  btn.style.display='none';result.style.display='none';loader.style.display='block';
+  wrap.classList.add('aianalyzin');analyzing=true;
+  setTheme({colors:['#7c3aed','#af002d','#319197','#ff7a18','#3d8ef8'],speed:3,behavior:'chaos'});
+  const genres=(obData.genres||[]).join(', ')||'Drama, Thriller';
+  const prompt=`You are a film recommendation AI for CineLog, a cinema diary app. The user "${obData.name||'Rizly'}" has logged 412 films, rated highly: Oppenheimer (4.4), Interstellar (4.7), Silence of the Lambs (4.8), Parasite (4.6), The Dark Knight (4.9). Their favorite genres are: ${genres}. Their viewing frequency: ${['daily','several times a week','a few times a month','occasionally'][obData.freq||1]}.
+
+Based on this profile, recommend ONE film they haven't seen yet. Reply ONLY with valid JSON, no markdown, no explanation:
+{"title":"Film Title","year":"Year","match":98,"reason":"One compelling sentence explaining why this film matches their taste exactly.","director":"Director Name"}`;
+  puter.ai.chat(prompt,{model:'claude-sonnet-4-6'}).then(res=>{
+    loader.style.display='none';wrap.classList.remove('aianalyzin');analyzing=false;
+    try{
+      const text=res.message.content[0].text.replace(/```json|```/g,'').trim();
+      const rec=JSON.parse(text);
+      document.getElementById('ai-rec-title').textContent=rec.title+' ('+rec.year+')';
+      document.getElementById('ai-rec-text').textContent=rec.reason;
+      document.querySelector('.mbadge').textContent=rec.match+'% Match';
+    }catch(e){
+      document.getElementById('ai-rec-title').textContent='The Dark Knight (2008)';
+      document.getElementById('ai-rec-text').textContent='Based on your love of Nolan\'s work and psychological complexity, this is the crown jewel.';
+    }
+    result.style.display='block';result.style.animation='vu .6s cubic-bezier(.16,1,.3,1)';
+    setTheme({colors:['#7c3aed','#3d8ef8','#319197'],speed:.7,behavior:'orbital'});
+  }).catch(()=>{
+    loader.style.display='none';wrap.classList.remove('aianalyzin');analyzing=false;
+    document.getElementById('ai-rec-text').textContent='Based on your profile, we recommend exploring more Nolan and Bong Joon Ho films.';
+    result.style.display='block';
+    setTheme({colors:['#7c3aed','#3d8ef8','#319197'],speed:.7,behavior:'orbital'});
+  });
+}
+
+function analyzeStyle(){
+  const loader=document.getElementById('style-loader'),result=document.getElementById('style-result');
+  loader.style.display='block';result.style.display='none';
+  const genres=(obData.genres||[]).join(', ')||'Drama, Thriller';
+  const prompt=`You are CineLog's style analysis AI. Analyze this user's profile:
+Name: ${obData.name||'Rizly'}. Logged 412 films. Top-rated: Oppenheimer 4.4, Interstellar 4.7, Silence of the Lambs 4.8, Parasite 4.6, The Dark Knight 4.9. Favorite genres: ${genres}. Watches films ${['daily','several times a week','a few times a month','occasionally'][obData.freq||1]}.
+
+Generate a short, personalized cinematic identity description (2 sentences max) and 3-5 personality tags (creative labels like "The Nolan Loyalist", "Psychological Voyeur", etc). Reply ONLY in JSON:
+{"description":"...","tags":["Tag1","Tag2","Tag3"]}`;
+  puter.ai.chat(prompt,{model:'claude-sonnet-4-6'}).then(res=>{
+    loader.style.display='none';result.style.display='block';
+    try{
+      const text=res.message.content[0].text.replace(/```json|```/g,'').trim();
+      const data=JSON.parse(text);
+      document.getElementById('style-desc').textContent=data.description;
+      document.getElementById('style-tags').innerHTML=data.tags.map((t,i)=>`<span class="stag ${i<2?'tgp':'tgs'}">${t}</span>`).join('');
+      document.getElementById('styletag').textContent='✦ '+data.tags.slice(0,2).join(' · ');
+    }catch(e){
+      document.getElementById('style-desc').textContent='Based on your 412 logged films — with a heavy emphasis on Christopher Nolan, psychological thrillers, and cerebral sci-fi — here\'s your Cinematic Identity:';
+      document.getElementById('style-tags').innerHTML='<span class="stag tgp">The Nolan Loyalist</span><span class="stag tgp">Psychological Voyeur</span><span class="stag tgs">Cosmic Dreamer</span><span class="stag tgs">Social Satirist</span>';
+    }
+  }).catch(()=>{
+    loader.style.display='none';result.style.display='block';
+    document.getElementById('style-desc').textContent='Analysis complete. Your taste profile skews heavily auteur-driven.';
+    document.getElementById('style-tags').innerHTML='<span class="stag tgp">The Nolan Loyalist</span><span class="stag tgp">Psychological Voyeur</span><span class="stag tgs">Cosmic Dreamer</span>';
+  });
+}
+
+// ══════════════════════════════════════════
+// PROFILE
+// ══════════════════════════════════════════
+function saveProfile(){
+  const n=document.getElementById('editname').value||'Rizly';
+  const b=document.getElementById('editbio').value||'Film Student at UNPAD';
+  const l=document.getElementById('editloc').value||'Bandung, Indonesia';
+  document.getElementById('profname').textContent=n;
+  document.getElementById('profmeta').textContent=l+' · '+b;
+  obData.name=n;closeM('profile-modal');
+  localStorage.setItem('cl_name',n);
+}
+
+// ══════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════
+function openLogModal(){openM('log-modal')}
+function openM(id){document.getElementById(id).classList.add('open');document.body.classList.add('no-scroll')}
+function closeM(id){document.getElementById(id).classList.remove('open');document.body.classList.remove('no-scroll')}
+
+document.querySelectorAll('#logstars i').forEach(s=>{
+  s.addEventListener('mouseover',()=>litSt(s.dataset.v));
+  s.addEventListener('mouseout',()=>litSt(logRating));
+  s.addEventListener('click',()=>{logRating=s.dataset.v;litSt(logRating)});
+});
+function litSt(v){document.querySelectorAll('#logstars i').forEach(s=>s.classList.toggle('lit',s.dataset.v<=v))}
+
+// ══════════════════════════════════════════
+// SCROLL REVEAL
+// ══════════════════════════════════════════
+let revealObserver=null;
+function initObserver(){
+  if(revealObserver)revealObserver.disconnect();
+  revealObserver=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('active')}),{threshold:.08});
+  document.querySelectorAll('.rev').forEach(el=>revealObserver.observe(el));
+}
+
+// ══════════════════════════════════════════
+// ONBOARDING
+// ══════════════════════════════════════════
+const OB=[
+  {render:()=>`<h2 style="font-family:var(--sr);font-size:26px;font-weight:700;margin-bottom:7px">Welcome to CineLog.</h2><p class="tb" style="font-size:14px;margin-bottom:18px">Your personal cinema universe. Let's set up your profile.</p><div style="margin-bottom:14px"><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your name</label><input class="finp" id="ob-name" placeholder="e.g. Rizly" value="${obData.name||''}"></div><div><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your city</label><input class="finp" id="ob-city" placeholder="e.g. Bandung" value="${obData.city||''}"></div>`,
+   save:()=>{obData.name=document.getElementById('ob-name').value||'Cinephile';obData.city=document.getElementById('ob-city').value}},
+  {render:()=>`<h2 style="font-family:var(--sr);font-size:24px;font-weight:700;margin-bottom:7px">What genres do you love?</h2><p class="tb" style="font-size:13px;margin-bottom:14px">Pick your favorites — this shapes your AI recommendations.</p><div class="ggrid">${['Thriller','Sci-Fi','Drama','Horror','Comedy','Romance','Action','Documentary','Animation','Arthouse','Crime','Fantasy'].map(g=>`<button class="gbtn${(obData.genres||[]).includes(g)?' sel':''}" onclick="toggleGenre(this,'${g}')">${g}</button>`).join('')}</div>`,
+   save:()=>{}},
+  {render:()=>`<h2 style="font-family:var(--sr);font-size:24px;font-weight:700;margin-bottom:7px">How often do you watch?</h2><p class="tb" style="font-size:13px;margin-bottom:14px">Helps calibrate your Cinematic Engine.</p><div style="display:flex;flex-direction:column;gap:8px">${['Daily — I live at the cinema','Several times a week','A few times a month','Occasionally'].map((o,i)=>`<button class="gbtn${obData.freq===i?' sel':''}" style="text-align:left;padding:11px 15px;border-radius:12px" onclick="selFreq(${i},this)">${o}</button>`).join('')}</div>`,
+   save:()=>{}}
+];
+function toggleGenre(btn,g){if(!obData.genres)obData.genres=[];const i=obData.genres.indexOf(g);if(i>-1){obData.genres.splice(i,1);btn.classList.remove('sel')}else{obData.genres.push(g);btn.classList.add('sel')}}
+function selFreq(i,btn){obData.freq=i;document.querySelectorAll('.obbody .gbtn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel')}
+function renderOb(){
+  document.getElementById('obbody').innerHTML=OB[obStep].render();
+  document.querySelectorAll('.obs').forEach((s,i)=>{s.classList.toggle('active',i===obStep);s.classList.toggle('done',i<obStep)});
+  document.getElementById('obnext').innerHTML=obStep<OB.length-1?'Continue <i class="ph-bold ph-arrow-right"></i>':'Start Logging <i class="ph-bold ph-film-strip"></i>';
+  setTimeout(bindCursor,50);
+}
+function obNext(){
+  OB[obStep].save();obStep++;
+  if(obStep>=OB.length){finishOb();return}renderOb();
+}
+function finishOb(){
+  localStorage.setItem('cl_onboarded','1');
+  localStorage.setItem('cl_name',obData.name||'Rizly');
+  localStorage.setItem('cl_genres',JSON.stringify(obData.genres||[]));
+  document.getElementById('profname').textContent=obData.name||'Rizly';
+  document.getElementById('editname').value=obData.name||'Rizly';
+  document.getElementById('profmeta').textContent=(obData.city||'Bandung, Indonesia')+' · Film Student at UNPAD';
+  const ob=document.getElementById('ob');
+  ob.style.transition='opacity .6s';ob.style.opacity='0';
+  setTimeout(()=>ob.style.display='none',600);
+}
+function initOb(){
+  if(localStorage.getItem('cl_onboarded')){
+    obData.name=localStorage.getItem('cl_name')||'Rizly';
+    obData.genres=JSON.parse(localStorage.getItem('cl_genres')||'[]');
+    document.getElementById('profname').textContent=obData.name;
+    document.getElementById('editname').value=obData.name;
+    document.getElementById('ob').style.display='none';
+  }else{renderOb()}
+}
+
+// ══════════════════════════════════════════
+// PATCH: functional state and integrations
+const STORE={logs:'cl_logs_v1',lists:'cl_lists_v1',friends:'cl_friends_v1',reviews:'cl_reviews_v1',watchlist:'cl_watchlist_v1',avatar:'cl_avatar',bio:'cl_bio',loc:'cl_loc',username:'cl_username',publicId:'cl_public_id'};
+const CONNECT_POOL=[
+{id:'c1001',username:'sarahm',name:'Sarah',status:'Logged Dune: Part Two — ★★★★½',avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80'},
+{id:'c1002',username:'diki_film',name:'Diki',status:'Watching The Dark Knight now',avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80'},
+{id:'c1003',username:'maya.review',name:'Maya',status:'Added Parasite to Watchlist',avatar:'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80'}
+];
+let userLogs=[],userLists={},userFriends=[],userReviews=[],userWatchlist=[],logSelectedMovie=null,trendingCache=[],activeView='home',sndPreview='';
+let connectResults=[];
+let logSearchTimer=null;
+const __safe=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const __slug=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||('list-'+Date.now());
+const __today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const __g=(k,f)=>{try{return JSON.parse(localStorage.getItem(k)||'')}catch(_){return f}};
+const __s=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const __rid=()=>Math.random().toString(36).slice(2,8).toUpperCase();
+
+function profileUsername(){
+  return (localStorage.getItem(STORE.username)||'').trim();
+}
+function profilePublicId(){
+  let pid=(localStorage.getItem(STORE.publicId)||'').trim();
+  if(!pid){pid='CL-'+__rid();localStorage.setItem(STORE.publicId,pid)}
+  return pid;
+}
+function ensureProfileIdentity(){
+  const name=(localStorage.getItem('cl_name')||obData.name||'Cinephile').trim()||'Cinephile';
+  let uname=(localStorage.getItem(STORE.username)||'').trim();
+  if(!uname){uname=__slug(name).replace(/-/g,'_').slice(0,20)||('user_'+__rid().toLowerCase().slice(0,4));localStorage.setItem(STORE.username,uname)}
+  profilePublicId();
+}
+function syncProfileIdentityUI(){
+  const pidEl=document.getElementById('profid');
+  if(pidEl)pidEl.textContent='ID: '+profilePublicId();
+  const u=(profileUsername()||'cinephile');
+  const uEl=document.getElementById('editusername');
+  if(uEl&&!uEl.value)uEl.value=u;
+}
+function movieWatchKey(m){
+  if(!m)return '';
+  if(m.tmdbId)return 'tmdb-'+(m.mediaType||'movie')+'-'+m.tmdbId;
+  return m.id||'';
+}
+function isInWatchlist(m){
+  const key=movieWatchKey(m||curMovie);
+  return !!key&&userWatchlist.some(x=>x&&x.id===key);
+}
+function renderWatchlistSection(){
+  const wrap=document.getElementById('watchlist-grid');
+  if(!wrap)return;
+  if(!userWatchlist.length){
+    wrap.innerHTML='<div class="tb" style="font-size:13px">No watchlist yet. Add films from movie detail page.</div>';
+    return;
+  }
+  wrap.innerHTML=userWatchlist.slice(0,10).map(w=>'<div class="mi" onclick="openWatchItem(\''+__safe(w.id)+'\')"><div class="mp" style="background-image:url(\''+__safe(w.poster||'')+'\')"></div><h4 style="font-size:12px;font-weight:600">'+__safe(w.title)+'</h4><p style="font-size:11px;color:var(--mu)">'+__safe(w.year||'')+'</p></div>').join('');
+}
+function syncWatchlistButton(){
+  const btn=document.getElementById('watchlist-btn');
+  if(!btn||!curMovie)return;
+  btn.innerHTML=isInWatchlist(curMovie)?'<i class="ph-bold ph-bookmark-simple"></i> In Watchlist':'<i class="ph-bold ph-bookmark-simple"></i> Watchlist';
+}
+function toggleWatchlist(){
+  if(!curMovie)return;
+  const key=movieWatchKey(curMovie);
+  if(!key)return;
+  const idx=userWatchlist.findIndex(x=>x&&x.id===key);
+  if(idx>=0){userWatchlist.splice(idx,1)}
+  else{
+    userWatchlist.unshift({
+      id:key,
+      movieId:curMovie.id||key,
+      tmdbId:curMovie.tmdbId||null,
+      mediaType:curMovie.mediaType||'movie',
+      title:curMovie.title||'Untitled',
+      year:String(curMovie.year||''),
+      poster:curMovie.poster||'',
+      addedAt:new Date().toISOString()
+    });
+  }
+  saveState();
+  renderWatchlistSection();
+  syncWatchlistButton();
+}
+function openWatchItem(id){
+  const row=userWatchlist.find(x=>x&&x.id===id);
+  if(!row)return;
+  const existing=MOVIES.find(m=>movieWatchKey(m)===id||m.id===row.movieId);
+  const m=existing||ensureMovie({id:row.movieId,title:row.title,year:row.year,poster:row.poster,tmdbId:row.tmdbId,mediaType:row.mediaType});
+  if(m){populateMovie(m);navigate('movie')}
+}
+function mapDirectoryRow(r){
+  return {
+    id:r.public_id||r.user_id||('u-'+__rid()),
+    username:r.username||'cinephile',
+    name:r.display_name||r.username||'CineLog User',
+    status:r.status_text||'On CineLog',
+    avatar:r.avatar_url||'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&q=80'
+  };
+}
+
+const CLOUD={enabled:false,ready:false,uid:'',client:null,lastError:''};
+let cloudSaveTimer=null;
+
+function cloudAvailable(){return !!(window.supabase && supabase.createClient)}
+
+async function initCloudSession(){
+  if(!cloudAvailable()){CLOUD.lastError='Supabase SDK not loaded';return false}
+  try{
+    CLOUD.client=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    let session=(await CLOUD.client.auth.getSession()).data.session;
+    if(!session){
+      const sign=await CLOUD.client.auth.signInAnonymously();
+      if(sign.error){CLOUD.lastError=sign.error.message||'Anonymous sign-in disabled';return false}
+      session=sign.data.session||null;
+    }
+    const usr=(await CLOUD.client.auth.getUser()).data.user;
+    if(!usr){CLOUD.lastError='No Supabase user';return false}
+    CLOUD.uid=usr.id;
+    const probe=await CLOUD.client.from('cl_profiles').select('user_id').limit(1);
+    if(probe.error){CLOUD.lastError='Table cl_profiles not ready';return false}
+    CLOUD.enabled=true;CLOUD.ready=true;
+    return true;
+  }catch(e){
+    CLOUD.lastError=(e&&e.message)||'Cloud init failed';
+    CLOUD.enabled=false;CLOUD.ready=false;
+    return false;
+  }
+}
+
+async function cloudPullState(){
+  if(!CLOUD.enabled||!CLOUD.client||!CLOUD.uid)return false;
+  try{
+    const uid=CLOUD.uid;
+    const profileQ=CLOUD.client.from('cl_profiles').select('*').eq('user_id',uid).maybeSingle();
+    const logsQ=CLOUD.client.from('cl_logs').select('*').eq('user_id',uid).order('created_at',{ascending:false});
+    const listsQ=CLOUD.client.from('cl_lists').select('*').eq('user_id',uid);
+    const friendsQ=CLOUD.client.from('cl_friends').select('*').eq('user_id',uid);
+    const reviewsQ=CLOUD.client.from('cl_reviews').select('*').eq('user_id',uid).order('created_at',{ascending:false});
+    const watchQ=CLOUD.client.from('cl_watchlist').select('*').eq('user_id',uid).order('created_at',{ascending:false});
+    const all=await Promise.all([profileQ,logsQ,listsQ,friendsQ,reviewsQ,watchQ]);
+    if(all.some(x=>x.error))return false;
+
+    const p=all[0].data;
+    const logs=(all[1].data||[]).map(x=>x.payload).filter(Boolean);
+    const lists=(all[2].data||[]).reduce((acc,x)=>{if(x.list_id&&x.payload)acc[x.list_id]=x.payload;return acc;},{});
+    const friends=(all[3].data||[]).map(x=>x.payload).filter(Boolean);
+    const reviews=(all[4].data||[]).map(x=>x.payload).filter(Boolean);
+    const watch=(all[5].data||[]).map(x=>x.payload).filter(Boolean);
+
+    if(logs.length)userLogs=logs;
+    if(Object.keys(lists).length)userLists=lists;
+    if(friends.length)userFriends=friends;
+    if(reviews.length)userReviews=reviews;
+    if(watch.length)userWatchlist=watch;
+
+    if(p){
+      if(p.name){obData.name=p.name;localStorage.setItem('cl_name',p.name);document.getElementById('profname').textContent=p.name;document.getElementById('editname').value=p.name}
+      if(p.bio!=null)localStorage.setItem(STORE.bio,p.bio);
+      if(p.location!=null)localStorage.setItem(STORE.loc,p.location);
+      if(p.avatar_url){localStorage.setItem(STORE.avatar,p.avatar_url);document.getElementById('profav').src=p.avatar_url}
+      if(p.username)localStorage.setItem(STORE.username,p.username);
+      if(p.public_id)localStorage.setItem(STORE.publicId,p.public_id);
+    }
+    return true;
+  }catch(_){return false}
+}
+async function cloudPushState(){
+  if(!CLOUD.enabled||!CLOUD.client||!CLOUD.uid)return false;
+  try{
+    const uid=CLOUD.uid;
+    const username=(profileUsername()||'cinephile').toLowerCase();
+    const publicId=profilePublicId();
+    const name=localStorage.getItem('cl_name')||obData.name||'Cinephile';
+    const avatar=localStorage.getItem(STORE.avatar)||'';
+    await CLOUD.client.from('cl_profiles').upsert({
+      user_id:uid,
+      name:name,
+      username:username,
+      public_id:publicId,
+      bio:localStorage.getItem(STORE.bio)||'',
+      location:localStorage.getItem(STORE.loc)||'',
+      avatar_url:avatar
+    },{onConflict:'user_id'});
+
+    await CLOUD.client.from('cl_logs').delete().eq('user_id',uid);
+    if(userLogs.length){
+      await CLOUD.client.from('cl_logs').insert(userLogs.map(l=>({user_id:uid,log_id:l.id+'_'+(l.date||''),payload:l})));
+    }
+
+    await CLOUD.client.from('cl_lists').delete().eq('user_id',uid);
+    const listRows=Object.keys(userLists).map(id=>({user_id:uid,list_id:id,payload:userLists[id]}));
+    if(listRows.length)await CLOUD.client.from('cl_lists').insert(listRows);
+
+    await CLOUD.client.from('cl_friends').delete().eq('user_id',uid);
+    if(userFriends.length){
+      await CLOUD.client.from('cl_friends').insert(userFriends.map(f=>({user_id:uid,friend_key:(f.id||f.username||('f_'+Math.random())),payload:f})));
+    }
+
+    await CLOUD.client.from('cl_reviews').delete().eq('user_id',uid);
+    if(userReviews.length){
+      await CLOUD.client.from('cl_reviews').insert(userReviews.map((r,i)=>({user_id:uid,review_key:String(i)+'_'+(r.movieId||'movie'),payload:r})));
+    }
+
+    await CLOUD.client.from('cl_watchlist').delete().eq('user_id',uid);
+    if(userWatchlist.length){
+      await CLOUD.client.from('cl_watchlist').insert(userWatchlist.map(w=>({user_id:uid,watch_key:w.id,payload:w})));
+    }
+
+    await CLOUD.client.from('cl_user_directory').upsert({
+      user_id:uid,
+      username:username,
+      public_id:publicId,
+      display_name:name,
+      avatar_url:avatar,
+      status_text:'On CineLog',
+      updated_at:new Date().toISOString()
+    },{onConflict:'user_id'});
+
+    return true;
+  }catch(_){return false}
+}
+function cloudPushDebounced(){
+  if(!CLOUD.enabled)return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer=setTimeout(()=>{cloudPushState();},650);
+}
+
+function ensureEnhancements(){
+  const lm=document.getElementById('log-modal');
+  if(lm&&!document.getElementById('logsearch')){const m=lm.querySelector('.mhdr');const d=document.createElement('div');d.innerHTML='<div class="frow"><label>Search Film/Series (TMDB)</label><input id="logsearch" class="finp" placeholder="e.g. Dune, Breaking Bad" oninput="searchLogMovie(this.value)"></div><div id="logsearch-results" style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px"></div>';m.insertAdjacentElement('afterend',d)}
+  const dt=lm?lm.querySelector('input[type="date"]'):null;if(dt){dt.id='logdate';dt.value=__today()}
+  const rv=lm?lm.querySelector('textarea.finp'):null;if(rv)rv.id='logreview';
+  const sb=lm?lm.querySelector('.btn.btnp'):null;if(sb)sb.setAttribute('onclick','saveLog()');
+
+  const pm=document.getElementById('profile-modal');
+  if(pm&&!document.getElementById('editphoto')){const save=pm.querySelector('.btn.btnp');const d=document.createElement('div');d.innerHTML='<div class="frow"><label>Profile Photo URL</label><input class="finp" id="editphoto" placeholder="https://..."></div><div class="frow"><label>Or Upload Photo</label><input class="finp" id="editphotofile" type="file" accept="image/*"></div>';save.insertAdjacentElement('beforebegin',d)}
+  if(pm&&!document.getElementById('editusername')){const nameRow=pm.querySelector('#editname');if(nameRow&&nameRow.closest('.frow')){const row=document.createElement('div');row.className='frow';row.innerHTML='<label>Username</label><input class="finp" id="editusername" placeholder="your_username">';nameRow.closest('.frow').insertAdjacentElement('afterend',row)}}
+
+  const dp=document.querySelector('#view-diary .pc');
+  if(dp&&!document.getElementById('watchlist-grid')){const sec=document.createElement('div');sec.innerHTML='<div class="sh" style="margin-top:32px"><h2 class="ts" style="margin-bottom:0">Watchlist</h2><button class="btn btng sm" onclick="navigate(\'filmlog\')">Open My Films</button></div><div class="mosaic" id="watchlist-grid" style="margin-top:14px"></div>';dp.appendChild(sec)}
+
+  const nm=document.getElementById('new-list-modal');
+  if(nm){const f=nm.querySelectorAll('.finp');if(f[0])f[0].id='newlist-name';if(f[1])f[1].id='newlist-desc';const sv=nm.querySelector('select.finp');if(sv)sv.id='newlist-vis';const b=nm.querySelector('.btn.btnp');if(b)b.setAttribute('onclick','createList()')}
+
+  const aiw=document.getElementById('aiwrap');
+  if(aiw&&!document.getElementById('ai-disclaimer')){const p=document.createElement('p');p.id='ai-disclaimer';p.className='tb';p.style.cssText='margin:10px auto 0;max-width:680px;text-align:center;font-size:12px;display:none';document.getElementById('aibtn').insertAdjacentElement('afterend',p)}
+
+  syncProfileIdentityUI();
+  renderWatchlistSection();
+  syncWatchlistButton();
+}
+function saveState(){
+  __s(STORE.logs,userLogs);
+  __s(STORE.lists,userLists);
+  __s(STORE.friends,userFriends);
+  __s(STORE.reviews,userReviews);
+  __s(STORE.watchlist,userWatchlist);
+  cloudPushDebounced();
+}
+async function loadState(){
+  userLogs=__g(STORE.logs,[]);userLists=__g(STORE.lists,{});userFriends=__g(STORE.friends,[]);userReviews=__g(STORE.reviews,[]);userWatchlist=__g(STORE.watchlist,[]);
+  if(!Array.isArray(userLogs))userLogs=[];if(!userLists||typeof userLists!=='object')userLists={};if(!Array.isArray(userFriends))userFriends=[];if(!Array.isArray(userReviews))userReviews=[];if(!Array.isArray(userWatchlist))userWatchlist=[];
+
+  ensureProfileIdentity();
+  const n=localStorage.getItem('cl_name')||'';if(n){document.getElementById('profname').textContent=n;document.getElementById('editname').value=n;obData.name=n}
+  const b=localStorage.getItem(STORE.bio)||'';const l=localStorage.getItem(STORE.loc)||'';if(b)document.getElementById('editbio').value=b;if(l)document.getElementById('editloc').value=l;
+  const u=localStorage.getItem(STORE.username)||'';const ue=document.getElementById('editusername');if(ue)ue.value=u;
+  const a=localStorage.getItem(STORE.avatar)||'';if(a)document.getElementById('profav').src=a;
+
+  if(CLOUD.enabled){await cloudPullState()}
+  ensureProfileIdentity();
+  renderProfile();renderLists();renderCommunity();buildFilmLog();renderRecent();renderWatchlistSection();syncWatchlistButton();
+}
+
+function renderProfile(){
+  const total=userLogs.length,yr=String(new Date().getFullYear()),thisY=userLogs.filter(x=>String((x.date||'').slice(0,4))===yr).length,revs=userLogs.filter(x=>String(x.review||'').trim()).length;
+  const hs=document.querySelectorAll('#view-diary .stat h5');if(hs[0])hs[0].textContent=total;if(hs[1])hs[1].textContent=thisY;if(hs[2])hs[2].textContent=revs;
+  document.getElementById('profmeta').textContent=(localStorage.getItem(STORE.loc)||'Set your location')+' · '+(localStorage.getItem(STORE.bio)||'Add a short bio');
+  const pid=document.getElementById('profid');if(pid)pid.textContent='ID: '+profilePublicId();
+  const b=document.querySelector('#view-diary .sh .btn.btng.sm[onclick*="filmlog"]');if(b)b.textContent='View All '+total;
+  const fs=document.querySelector('#view-filmlog .ph .tb');if(fs)fs.textContent='All '+total+' films — sorted & filtered.';
+  renderWatchlistSection();
+}
+
+function renderRecent(){
+  const d=document.querySelector('#view-diary .dlist');if(!d)return;const arr=[...userLogs].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,2);
+  if(!arr.length){d.innerHTML='<div class="tb" style="font-size:13px">No logs yet. Tap Log+ to add your first film.</div>';return}
+  d.innerHTML=arr.map(x=>'<div class="dc rev"><div class="dt" style="background-image:url(\''+__safe(x.poster||'')+'\')"></div><div><h4 style="font-size:17px;font-weight:600;font-family:var(--sr)">'+__safe(x.title)+' <span style="color:var(--mu);font-weight:400;font-family:var(--ss);font-size:14px">('+__safe(x.year||'')+')</span></h4><p style="color:var(--mu);font-size:11px;margin-top:3px">'+__safe(x.date||'')+'</p><div class="dstr">'+'★'.repeat(Math.max(0,Math.min(5,Math.round(Number(x.rating)||0))))+'</div><p class="tb" style="font-size:13px;margin-top:4px">'+__safe(x.review||'No review yet.')+'</p></div></div>').join('');
+  initObserver();
+}
+
+async function fetchTrending(){try{const r=await fetch('https://api.themoviedb.org/3/trending/all/week?api_key='+TMDB);const d=await r.json();trendingCache=(d.results||[]).filter(x=>x.media_type==='movie'||x.media_type==='tv').slice(0,10)}catch(_){trendingCache=[]}}
+
+function renderCommunity(){
+  const c=document.getElementById('view-community');if(!c)return;const p=c.querySelectorAll('.cpanel');const feed=c.querySelector('.feed');if(!p[0]||!p[1]||!feed)return;
+  const connect='<div class="frow" style="margin-bottom:8px"><label>Connect Plus</label><input id="connect-query" class="finp" placeholder="Search username / ID"></div><button class="btn btna sm" style="margin-bottom:10px" onclick="searchConnectPlus()">Find</button><div id="connect-results" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>';
+  const fHtml=userFriends.length?userFriends.map(f=>'<div class="fri"><div class="fav3" style="background-image:url(\''+__safe(f.avatar)+'\')"></div><div class="fri-info"><h4>'+__safe(f.name)+'</h4><p>'+__safe(f.status)+'</p></div></div>').join(''):'<div class="tb" style="font-size:13px">No friends connected yet.</div>';
+  p[0].innerHTML='<h3 class="ts" style="font-size:17px;margin-bottom:14px">Friends</h3>'+connect+fHtml;
+  const top=(trendingCache.length?trendingCache:userLogs.map((l,i)=>({title:l.title,release_date:(l.year||'')+'-01-01',vote_count:100-i*9,media_type:'movie'}))).slice(0,5);
+  p[1].innerHTML='<h3 class="ts" style="font-size:17px;margin-bottom:14px">Global Trending</h3>'+top.map((t,i)=>'<div class="tpill"><span class="trnk">'+(i+1)+'</span><div class="trinfo"><h4>'+__safe(t.title||t.name||'Untitled')+'</h4><p>'+__safe((t.release_date||t.first_air_date||'').slice(0,4))+'</p></div><span class="trcnt">'+(Number(t.vote_count||0)>999?(Number(t.vote_count||0)/1000).toFixed(1)+'K':Number(t.vote_count||0))+'</span></div>').join('');
+  const rv=userReviews.slice(0,3);
+  feed.innerHTML=rv.length?rv.map((r,i)=>'<div class="fcard rev" onclick="navigate(\'review&id='+i+'\')"><div class="fav2" style="background-image:url(\''+__safe(r.avatar||'')+'\')"></div><div class="fb"><div class="fm"><strong>'+__safe(r.user)+'</strong> watched <strong>'+__safe(r.movieTitle)+'</strong></div><div class="fst">'+('★'.repeat(Math.floor(Number(r.stars)||0))+(Number(r.stars)%1>=.5?'½':''))+'</div><p class="tb" style="font-size:13px">'+__safe(r.text||'')+'</p><div style="margin-top:7px;font-size:11px;color:var(--mu)">'+__safe(r.likes||0)+' likes · '+__safe((r.comments||[]).length)+' comments <span style="color:var(--ac)">Read more →</span></div></div><div class="fth" style="background-image:url(\''+__safe((MOVIES.find(m=>m.id===r.movieId)||{}).poster||'')+'\')"></div></div>').join(''):'<div class="tb" style="font-size:13px">No review data yet. Global trends shown above.</div>';
+  initObserver();
+}
+
+function renderConnectResults(rows){
+  const out=document.getElementById('connect-results');
+  if(!out)return;
+  if(!rows.length){out.innerHTML='<div class="tb" style="font-size:12px">No user found.</div>';return}
+  connectResults=rows;
+  out.innerHTML=rows.map((r,i)=>'<div class="fri"><div class="fav3" style="background-image:url(\''+__safe(r.avatar||'')+'\')"></div><div class="fri-info"><h4>'+__safe(r.name)+' <span style="color:var(--mu);font-size:12px">@'+__safe(r.username||'cinephile')+'</span></h4><p>'+__safe(r.id)+'</p></div><button class="btn btng sm" onclick="addFriend('+i+')">Add</button></div>').join('');
+}
+async function searchConnectPlus(){
+  const q=((document.getElementById('connect-query')||{}).value||'').trim().toLowerCase();
+  const out=document.getElementById('connect-results');
+  if(!out)return;
+  if(!q){out.innerHTML='';connectResults=[];return}
+  out.innerHTML='<div class="tb" style="font-size:12px">Searching...</div>';
+
+  if(CLOUD.enabled&&CLOUD.client){
+    try{
+      const dataQ=await CLOUD.client.from('cl_user_directory').select('user_id,username,public_id,display_name,avatar_url,status_text').or('username.ilike.%'+q+'%,public_id.ilike.%'+q+'%,display_name.ilike.%'+q+'%').limit(8);
+      if(!dataQ.error){
+        const rows=(dataQ.data||[]).filter(x=>x.user_id!==CLOUD.uid).map(mapDirectoryRow);
+        renderConnectResults(rows);
+        if(rows.length)return;
+      }
+    }catch(_){ }
+  }
+
+  const rows=CONNECT_POOL.filter(x=>x.username.toLowerCase().includes(q)||x.id.toLowerCase().includes(q)||x.name.toLowerCase().includes(q)).slice(0,8);
+  renderConnectResults(rows);
+}
+function addFriend(idx){
+  const f=connectResults[idx];
+  if(!f||userFriends.some(x=>x.id===f.id))return;
+  userFriends.push(f);
+  saveState();
+  renderCommunity();
+}
+
+async function searchLogMovie(q){const out=document.getElementById('logsearch-results');if(!out)return;clearTimeout(logSearchTimer);if(!q||q.trim().length<2){out.innerHTML='';return}logSearchTimer=setTimeout(async()=>{out.innerHTML='<div class="tb" style="font-size:12px">Searching...</div>';try{const r=await fetch('https://api.themoviedb.org/3/search/multi?api_key='+TMDB+'&query='+encodeURIComponent(q.trim()));const d=await r.json();const rows=(d.results||[]).filter(x=>x.media_type==='movie'||x.media_type==='tv').slice(0,6);if(!rows.length){out.innerHTML='<div class="tb" style="font-size:12px">No results.</div>';return}window.__tm=Object.create(null);rows.forEach(x=>window.__tm['m-'+x.media_type+'-'+x.id]=x);out.innerHTML=rows.map(x=>'<button class="btn btng sm" style="justify-content:flex-start;text-align:left" onclick="selectLogMovie(\'m-'+x.media_type+'-'+x.id+'\')">'+(x.poster_path?'<img src="'+TMDB_IMG+'w92'+x.poster_path+'" style="width:26px;height:38px;object-fit:cover;border-radius:6px;margin-right:8px" alt="">':'')+'<span>'+__safe(x.title||x.name||'Untitled')+' ('+__safe((x.release_date||x.first_air_date||'').slice(0,4)||'—')+')</span></button>').join('')}catch(_){out.innerHTML='<div class="tb" style="font-size:12px">TMDB search failed.</div>'}},250)}
+function selectLogMovie(id){const x=window.__tm?window.__tm[id]:null;if(!x)return;logSelectedMovie=x;document.getElementById('logtitle').textContent=x.title||x.name||'Movie'}
+
+function ensureMovie(log){let m=MOVIES.find(x=>x.id===log.id);if(m)return m;m={id:log.id,title:log.title,year:String(log.year||''),director:'Unknown',rating:String(log.rating||0),tmdbId:log.tmdbId||null,logline:'Logged from your diary.',synopsis:'Details are updating from TMDB.',quotes:[{t:'Your personal log entry.',a:obData.name||'You',r:''}],imdb:'—',rt:'—',videos:[{label:'Trailer',id:'zSWdZVtXT7E'}],poster:log.poster||'',stills:[log.poster||''],theme:(curMovie&&curMovie.theme)||{colors:['#0d1b4b','#1a0a2e','#0a1628'],speed:.4,behavior:'default'},why:'Based on your own watch history.',sndId:null,sndTitle:'Soundtrack',sndComp:'',funFacts:['Fetching dynamic facts...']};MOVIES.push(m);if(log.tmdbId){fetch('https://api.themoviedb.org/3/'+(log.mediaType==='tv'?'tv':'movie')+'/'+log.tmdbId+'?api_key='+TMDB).then(r=>r.json()).then(d=>{m.synopsis=d.overview||m.synopsis;m.logline=(d.tagline||m.logline||'').slice(0,160);m.year=String((d.release_date||d.first_air_date||m.year||'').slice(0,4));m.rating=((Number(d.vote_average)||0)/2).toFixed(1);if(d.poster_path)m.poster=TMDB_IMG+'w500'+d.poster_path;fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent((d.title||d.name||m.title)+' '+m.year+' film')).then(x=>x.ok?x.json():null).then(w=>{if(w&&w.extract)m.funFacts=[w.extract.split('. ').slice(0,2).join('. ')+'.']}).catch(()=>{})}).catch(()=>{})}return m}
+
+function openLogModal(){ensureEnhancements();logSelectedMovie=curMovie&&curMovie.tmdbId?{id:curMovie.tmdbId,media_type:'movie',title:curMovie.title,release_date:String(curMovie.year)+'-01-01',poster_path:(curMovie.poster||'').split('/w500/')[1]||null}:null;document.getElementById('logtitle').textContent=(logSelectedMovie&&logSelectedMovie.title)||curMovie.title||'Movie';const d=document.getElementById('logdate');if(d)d.value=__today();const r=document.getElementById('logreview');if(r)r.value='';const s=document.getElementById('logsearch');if(s)s.value='';const rs=document.getElementById('logsearch-results');if(rs)rs.innerHTML='';logRating=0;litSt(0);openM('log-modal')}
+
+function saveLog(){const p=logSelectedMovie;const title=(p?(p.title||p.name):curMovie.title)||'Untitled';const year=(p?String((p.release_date||p.first_air_date||'').slice(0,4)):String(curMovie.year||''))||'';const mediaType=(p&&p.media_type)||'movie';const tmdbId=(p&&p.id)||curMovie.tmdbId||null;const row={id:tmdbId?('tmdb-'+mediaType+'-'+tmdbId):__slug(title+'-'+year),title,year,rating:Number(logRating||0),poster:(p&&p.poster_path?(TMDB_IMG+'w500'+p.poster_path):curMovie.poster||''),date:(document.getElementById('logdate')||{}).value||__today(),review:((document.getElementById('logreview')||{}).value||'').trim(),tmdbId,mediaType};userLogs=userLogs.filter(x=>!(x.id===row.id&&x.date===row.date));userLogs.unshift(row);if(row.review){userReviews.unshift({user:obData.name||'You',avatar:localStorage.getItem(STORE.avatar)||document.getElementById('profav').src,movieId:row.id,movieTitle:row.title,stars:row.rating||0,text:row.review,likes:0,comments:[]})}ensureMovie(row);saveState();renderProfile();renderRecent();buildFilmLog();renderCommunity();closeM('log-modal')}
+
+function createList(){const n=((document.getElementById('newlist-name')||{}).value||'').trim();if(!n)return;let id=__slug(n);if(userLists[id])id=id+'-'+Date.now();const d=((document.getElementById('newlist-desc')||{}).value||'').trim();const v=((document.getElementById('newlist-vis')||{}).value||'Public');userLists[id]={title:n,meta:'0 Films · '+(obData.name||'You')+' · '+v,desc:d||'No description yet.',cover:(userLogs[0]&&userLogs[0].poster)||MOVIES[0].poster,movies:[]};saveState();renderLists();closeM('new-list-modal')}
+
+function renderLists(){const g=document.querySelector('#view-lists .lgrd');if(!g)return;const ids=Object.keys(userLists);if(!ids.length){g.innerHTML='<div class="tb" style="font-size:13px">No lists yet. Create your first list.</div><div onclick="openM(\'new-list-modal\')"><div class="nlbtn">+ Create New List</div></div>';return}g.innerHTML=ids.map((id,i)=>{const l=userLists[id];const cov=(l.movies||[]).slice(0,4).map(mid=>{const m=MOVIES.find(x=>x.id===mid);return '<div style="background-image:url(\''+__safe((m&&m.poster)||l.cover||'')+'\')"></div>'}).join('')||('<div style="background-image:url(\''+__safe(l.cover||'')+'\')"></div><div style="background:#151515"></div><div style="background:#1f1f1f"></div><div style="background:#2a2a2a"></div>');return '<div class="lcard rev" style="transition-delay:'+(i*0.07).toFixed(2)+'s" onclick="navigate(\'lists-detail&id='+__safe(id)+'\')"><div class="lcov">'+cov+'</div><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h3>'+__safe(l.title)+'</h3><p class="tb" style="font-size:12px">'+__safe(l.meta)+'</p></div><button class="btn btng sm" style="padding:5px 9px;font-size:11px" onclick="event.stopPropagation();openM(\'edit-list-modal\')">✎</button></div></div>'}).join('')+'<div onclick="openM(\'new-list-modal\')"><div class="nlbtn">+ Create New List</div></div>';initObserver()}
+populateList=function(id){const l=userLists[id];if(!l){document.getElementById('ldcov').style.backgroundImage='none';document.getElementById('ldtitle').textContent='List not found';document.getElementById('ldmeta').textContent='';document.getElementById('lddesc').textContent='Create a list first.';document.getElementById('ldgrid').innerHTML='';return}document.getElementById('ldcov').style.backgroundImage='url(\''+__safe(l.cover||'')+'\')';document.getElementById('ldtitle').textContent=l.title;document.getElementById('ldmeta').textContent=l.meta;document.getElementById('lddesc').textContent=l.desc;const g=document.getElementById('ldgrid');g.innerHTML='';(l.movies||[]).forEach(mid=>{const m=MOVIES.find(x=>x.id===mid);if(!m)return;const d=document.createElement('div');d.className='mi';d.innerHTML='<div class="mp" style="background-image:url(\''+__safe(m.poster)+'\')"></div><h4 style="font-size:12px;font-weight:600">'+__safe(m.title)+'</h4><p style="font-size:11px;color:var(--mu)">'+__safe(m.year)+'</p>';d.onclick=()=>navigate('movie&id='+m.id);g.appendChild(d)});if(!(l.movies||[]).length)g.innerHTML='<div class="tb" style="font-size:13px">No films in this list yet.</div>'}
+
+buildFilmLog=function(){const g=document.getElementById('lgrid');let f=[...userLogs];const n=new Date();if(logSort==='rating')f.sort((a,b)=>Number(b.rating||0)-Number(a.rating||0));if(logSort==='recent')f.sort((a,b)=>(b.date||'').localeCompare(a.date||''));if(logSort==='year')f=f.filter(x=>String((x.date||'').slice(0,4))===String(n.getFullYear()));if(logSort==='month')f=f.filter(x=>String((x.date||'').slice(0,7))===(n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')));if(logSort==='week'){const s=new Date(n);s.setDate(n.getDate()-6);f=f.filter(x=>{const d=new Date(x.date||'');return !Number.isNaN(d.valueOf())&&d>=s&&d<=n})}if(!f.length){g.innerHTML='<div class="tb" style="font-size:13px">No logged films yet. Use Log+ to add your first title.</div>';return}g.innerHTML='';f.forEach(m=>{const d=document.createElement('div');d.className='lgi';d.innerHTML='<div class="lgp" style="background-image:url(\''+__safe(m.poster||'')+'\')"><div class="lgr">★'+__safe(m.rating||0)+'</div></div><h4>'+__safe(m.title)+'</h4><p>'+__safe(m.year||'')+'</p>';d.onclick=()=>{const mv=MOVIES.find(x=>x.id===m.id)||ensureMovie(m);if(mv){populateMovie(mv);navigate('movie')}};g.appendChild(d)})}
+
+function showAID(msg){const e=document.getElementById('ai-disclaimer');if(!e)return;e.textContent=msg||'AI analysis uses Puter. Some browsers may require Puter sign-in.';e.style.display='block'}
+const hasPuter=()=>!!(window.puter&&puter.ai&&typeof puter.ai.chat==='function');
+runAI=function(){const btn=document.getElementById('aibtn'),loader=document.getElementById('ai-loader'),result=document.getElementById('ai-result'),wrap=document.getElementById('aiwrap');btn.style.display='none';result.style.display='none';loader.style.display='block';wrap.classList.add('aianalyzin');analyzing=true;setTheme({colors:['#7c3aed','#af002d','#319197','#ff7a18','#3d8ef8'],speed:3,behavior:'chaos'});const genres=(obData.genres||[]).join(', ')||'Drama, Thriller';const sample=userLogs.slice(0,8).map(x=>x.title+' ('+(x.rating||0)+')').join(', ')||'No logs yet';const prompt='You are a film recommendation AI for CineLog. User: '+(obData.name||'User')+'. Genres: '+genres+'. Recent logs: '+sample+'. Return ONLY JSON: {"title":"...","year":"...","match":95,"reason":"..."}';if(!hasPuter()){showAID();loader.style.display='none';wrap.classList.remove('aianalyzin');analyzing=false;document.getElementById('ai-rec-title').textContent='Interstellar (2014)';document.getElementById('ai-rec-text').textContent='Fallback recommendation based on current profile and trends.';document.querySelector('.mbadge').textContent='84% Match';result.style.display='block';btn.style.display='inline-flex';btn.innerHTML='<i class="ph-bold ph-arrow-clockwise"></i> Analyze Again';setTheme({colors:['#7c3aed','#3d8ef8','#319197'],speed:.7,behavior:'orbital'});return}puter.ai.chat(prompt,{model:'claude-sonnet-4-6'}).then(res=>{loader.style.display='none';wrap.classList.remove('aianalyzin');analyzing=false;try{const txt=res.message.content[0].text.replace(/```json|```/g,'').trim();const rec=JSON.parse(txt);document.getElementById('ai-rec-title').textContent=(rec.title||'Unknown')+' ('+(rec.year||'—')+')';document.getElementById('ai-rec-text').textContent=rec.reason||'No explanation returned.';document.querySelector('.mbadge').textContent=(rec.match||88)+'% Match'}catch(_){document.getElementById('ai-rec-title').textContent='The Dark Knight (2008)';document.getElementById('ai-rec-text').textContent='Based on your profile, this remains a strong high-confidence pick.';document.querySelector('.mbadge').textContent='89% Match'}result.style.display='block';btn.style.display='inline-flex';btn.innerHTML='<i class="ph-bold ph-arrow-clockwise"></i> Analyze Again';setTheme({colors:['#7c3aed','#3d8ef8','#319197'],speed:.7,behavior:'orbital'})}).catch(()=>{loader.style.display='none';wrap.classList.remove('aianalyzin');analyzing=false;showAID('AI provider unavailable or requires sign-in. Fallback activated.');document.getElementById('ai-rec-title').textContent='Parasite (2019)';document.getElementById('ai-rec-text').textContent='Fallback recommendation generated without external AI.';document.querySelector('.mbadge').textContent='82% Match';result.style.display='block';btn.style.display='inline-flex';btn.innerHTML='<i class="ph-bold ph-arrow-clockwise"></i> Analyze Again';setTheme({colors:['#7c3aed','#3d8ef8','#319197'],speed:.7,behavior:'orbital'})})}
+
+analyzeStyle=function(){const loader=document.getElementById('style-loader'),result=document.getElementById('style-result');loader.style.display='block';result.style.display='none';const genres=(obData.genres||[]).join(', ')||'Drama, Thriller';const prompt='Analyze this cinephile briefly. Genres: '+genres+'. Logs: '+userLogs.length+'. Return JSON: {"description":"...","tags":["...","..."]}';if(!hasPuter()){showAID();loader.style.display='none';result.style.display='block';document.getElementById('style-desc').textContent='You are building your cinematic profile. Log more titles to sharpen identity insights.';document.getElementById('style-tags').innerHTML='<span class="stag tgp">New Cinephile</span><span class="stag tgs">Explorer</span>';document.getElementById('styletag').textContent='✦ New Cinephile · Explorer';return}puter.ai.chat(prompt,{model:'claude-sonnet-4-6'}).then(res=>{loader.style.display='none';result.style.display='block';try{const txt=res.message.content[0].text.replace(/```json|```/g,'').trim();const d=JSON.parse(txt);const tags=(d.tags||[]).slice(0,5);document.getElementById('style-desc').textContent=d.description||'No description.';document.getElementById('style-tags').innerHTML=tags.map((t,i)=>'<span class="stag '+(i<2?'tgp':'tgs')+'">'+__safe(t)+'</span>').join('');document.getElementById('styletag').textContent='✦ '+(tags.slice(0,2).join(' · ')||'CineLog Member')}catch(_){document.getElementById('style-desc').textContent='Your style profile is evolving. Add more reviews for sharper analysis.';document.getElementById('style-tags').innerHTML='<span class="stag tgp">Cine Explorer</span><span class="stag tgs">Pattern Builder</span>'}}).catch(()=>{loader.style.display='none';result.style.display='block';showAID();document.getElementById('style-desc').textContent='AI style analysis unavailable. Using local fallback profile.';document.getElementById('style-tags').innerHTML='<span class="stag tgp">Cine Explorer</span><span class="stag tgs">Pattern Builder</span>'})}
+
+saveProfile=function(){
+  const n=(document.getElementById('editname').value||'').trim()||'Cinephile';
+  const b=(document.getElementById('editbio').value||'').trim();
+  const l=(document.getElementById('editloc').value||'').trim();
+  const un=((document.getElementById('editusername')||{}).value||'').trim();
+  const u=((document.getElementById('editphoto')||{}).value||'').trim();
+  const f=((document.getElementById('editphotofile')||{}).files||[])[0];
+  const apply=av=>{
+    document.getElementById('profname').textContent=n;
+    document.getElementById('profmeta').textContent=(l||'Set your location')+' · '+(b||'Add a short bio');
+    if(av)document.getElementById('profav').src=av;
+    obData.name=n;
+    localStorage.setItem('cl_name',n);
+    localStorage.setItem(STORE.bio,b);
+    localStorage.setItem(STORE.loc,l);
+    localStorage.setItem(STORE.username,(__slug(un||n).replace(/-/g,'_').slice(0,20)||('user_'+__rid().toLowerCase().slice(0,4))).toLowerCase());
+    if(av)localStorage.setItem(STORE.avatar,av);
+    ensureProfileIdentity();
+    syncProfileIdentityUI();
+    renderProfile();
+    saveState();
+    closeM('profile-modal');
+  };
+  if(f){const rd=new FileReader();rd.onload=()=>apply(String(rd.result||''));rd.readAsDataURL(f);return}
+  apply(u||localStorage.getItem(STORE.avatar)||'');
+}
+
+postComment=function(){const inp=document.getElementById('cmtinp');const val=(inp.value||'').trim();if(!val)return;const cl=document.getElementById('cmtlist');const d=document.createElement('div');d.style.cssText='background:rgba(17,17,20,.7);border:1px solid var(--bd);border-radius:11px;padding:11px 14px;animation:vu .4s';const u=document.createElement('strong');u.style.fontSize='12px';u.textContent=obData.name||'You';const p=document.createElement('p');p.style.cssText='font-size:12px;color:var(--mu);margin-top:2px;user-select:text';p.textContent=val;d.appendChild(u);d.appendChild(p);cl.appendChild(d);inp.value=''}
+
+populateReview=function(idx){const src=userReviews.length?userReviews:REVIEWS;curReview=src[idx]||src[0];if(!curReview)return;const r=curReview;document.getElementById('rvav').style.backgroundImage='url(\''+__safe(r.avatar||'')+'\')';document.getElementById('rvtitle').textContent=__safe(r.user)+"'s Review";document.getElementById('rvsub').textContent=__safe(r.movieTitle)+' · '+__safe(r.stars)+' stars';document.getElementById('rvposter').style.backgroundImage='url(\''+__safe((MOVIES.find(m=>m.id===r.movieId)||{}).poster||'')+'\')';document.getElementById('rvtext').textContent=r.text||'';document.getElementById('rvstars').textContent='★'.repeat(Math.floor(Number(r.stars)||0))+((Number(r.stars)%1>=.5)?'½':'');liked=false;document.getElementById('likebtn').classList.remove('liked');document.getElementById('likecnt').textContent=String(r.likes||0);document.getElementById('rvfilmbtn').onclick=()=>navigate('movie&id='+r.movieId);const cl=document.getElementById('cmtlist');const cm=r.comments||[];cl.innerHTML=cm.map(c=>'<div style="background:rgba(17,17,20,.7);border:1px solid var(--bd);border-radius:11px;padding:11px 14px"><strong style="font-size:12px">'+__safe(c.u)+'</strong><p style="font-size:12px;color:var(--mu);margin-top:2px;user-select:text">'+__safe(c.t)+'</p></div>').join('')}
+
+function stopMedia(){pauseHeroVideo();if(sndPlayer&&sndPlayer.pauseVideo)sndPlayer.pauseVideo();const a=document.getElementById('snd-audio');if(a){a.pause();a.currentTime=0}sndIsPlaying=false;const i=document.getElementById('sndpico');const b=document.getElementById('sndpbtn');if(i)i.className='ph-bold ph-play';if(b)b.classList.remove('playing')}
+function normalizeViewId(viewId){
+  if(!viewId)return 'home';
+  const v=String(viewId).replace(/^#/,'').trim();
+  return v||'home';
+}
+function viewIdToHash(viewId){
+  return '#'+normalizeViewId(viewId);
+}
+function urlToViewId(){
+  const h=(window.location.hash||'').replace(/^#/,'');
+  return h||'home';
+}
+function syncRoute(viewId,replace){
+  const hash=viewIdToHash(viewId);
+  const state={viewId:normalizeViewId(viewId)};
+  if(replace){window.history.replaceState(state,'',hash);return}
+  if(window.location.hash!==hash)window.history.pushState(state,'',hash);
+}
+window.addEventListener('popstate',e=>{
+  const target=(e.state&&e.state.viewId)?e.state.viewId:urlToViewId();
+  isPopNavigating=true;
+  navigate(target);
+  isPopNavigating=false;
+});
+const __nav=navigate;navigate=function(v){
+  const viewId=normalizeViewId(v);
+  const b=viewId.includes('&')?viewId.split('&')[0]:viewId;
+  if(b!==activeView)stopMedia();
+  if(b==='community')renderCommunity();
+  if(b==='lists')renderLists();
+  __nav(viewId);
+  activeView=b;
+  if(!isPopNavigating)syncRoute(viewId,false);
+}
+
+const __popMovie=populateMovie;populateMovie=async function(m){await __popMovie(m);if(m&&m.tmdbId){try{const r=await fetch('https://api.themoviedb.org/3/'+((m.mediaType==='tv')?'tv':'movie')+'/'+m.tmdbId+'?api_key='+TMDB);const d=await r.json();const q=encodeURIComponent((d.title||d.name||m.title||'')+' '+((d.release_date||d.first_air_date||m.year||'').slice(0,4))+' film');const w=await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+q);if(w.ok){const wd=await w.json();if(wd&&wd.extract){m.funFacts=[wd.extract.split('. ').slice(0,2).join('. ')+'.'];ffIdx=0;showFF(m)}}}catch(_){}}};
+const __loadSnd=loadSnd;loadSnd=async function(m){__loadSnd(m);sndPreview='';if(m&&m.sndId)return;try{const r=await fetch('https://itunes.apple.com/search?media=music&limit=1&term='+encodeURIComponent((m.title||'')+' soundtrack'));const d=await r.json();const h=(d.results||[])[0];if(h&&h.previewUrl){sndPreview=h.previewUrl;document.getElementById('sndt').textContent=h.trackName||'Soundtrack Preview';document.getElementById('snds').textContent=h.artistName||''}}catch(_){}}
+const __sndPlay=sndPlay;sndPlay=function(){const a=document.getElementById('snd-audio');if(sndPreview&&a&&(!curMovie.sndId||!sndPlayer||!sndPlayer.playVideo)){if(!a.src)a.src=sndPreview;if(sndIsPlaying){a.pause();sndIsPlaying=false;document.getElementById('sndpico').className='ph-bold ph-play';document.getElementById('sndpbtn').classList.remove('playing')}else{a.play().catch(()=>{});sndIsPlaying=true;document.getElementById('sndpico').className='ph-bold ph-pause';document.getElementById('sndpbtn').classList.add('playing')}return}__sndPlay()}
+const __sndMute=sndMute;sndMute=function(){const a=document.getElementById('snd-audio');if(sndPreview&&a&&(!curMovie.sndId||!sndPlayer)){a.muted=!a.muted;document.getElementById('sndmico').className=a.muted?'ph-bold ph-speaker-slash':'ph-bold ph-speaker-high';return}__sndMute()}
+
+window.searchLogMovie=searchLogMovie;window.selectLogMovie=selectLogMovie;window.saveLog=saveLog;window.createList=createList;window.searchConnectPlus=searchConnectPlus;window.addFriend=addFriend;
+
+function setMobileViewportHeight(){
+  const vh=window.innerHeight*0.01;
+  document.documentElement.style.setProperty('--app-vh',vh+'px');
+}
+// INIT
+// ══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',async()=>{
+  setMobileViewportHeight();
+  window.addEventListener('resize',setMobileViewportHeight,{passive:true});
+  window.addEventListener('orientationchange',setMobileViewportHeight,{passive:true});
+  ensureEnhancements();
+  buildCarousel();applyHero(MOVIES[0]);initObserver();bindCursor();initOb();
+  await fetchTrending();
+  await initCloudSession();
+  await loadState();
+  const initialView=urlToViewId();
+  isPopNavigating=true;
+  navigate(initialView||'home');
+  isPopNavigating=false;
+  syncRoute(initialView||'home',true);
+  if(!IS_TOUCH_DEVICE)setInterval(bindCursor,2500);
+  const fade=document.getElementById('hfade');
+  if(fade){fade.style.transition='opacity .5s';fade.style.pointerEvents='none'}
+});
+
+window.navigate=navigate;window.toggleFab=toggleFab;window.openLogModal=openLogModal;
+window.openM=openM;window.closeM=closeM;window.goToHeroMovie=goToHeroMovie;window.goBack=goBack;window.toggleWatchlist=toggleWatchlist;window.openWatchItem=openWatchItem;
+window.runAI=runAI;window.analyzeStyle=analyzeStyle;window.toggleMute=toggleMute;window.togglePlay=togglePlay;
+window.sndPlay=sndPlay;window.sndMute=sndMute;window.toggleLike=toggleLike;window.postComment=postComment;
+window.nextFF=nextFF;window.saveProfile=saveProfile;window.filterLog=filterLog;window.switchVideo=switchVideo;
+window.obNext=obNext;window.toggleGenre=toggleGenre;window.selFreq=selFreq;window.MOVIES=MOVIES;
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
