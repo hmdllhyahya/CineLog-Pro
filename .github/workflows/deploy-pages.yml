@@ -1,37 +1,75 @@
-name: Deploy static site to GitHub Pages
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ["main"]
-  workflow_dispatch:
+    branches: [main]
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
-
 jobs:
+  # ── Quality Gate ────────────────────────────────────────────────────────────
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for secret leaks
+        run: |
+          # Fail if any real Supabase URL appears hardcoded in config.js
+          if grep -E "supabase\.co" assets/js/config.js; then
+            echo "❌ Real Supabase URL found in config.js — do not commit credentials!"
+            exit 1
+          fi
+          # Fail if TMDB key pattern found hardcoded in index.html (32-char hex string)
+          if grep -E "const TMDB\s*=\s*'[a-f0-9]{32}'" index.html; then
+            echo "❌ Hardcoded TMDB key found in index.html — remove it!"
+            exit 1
+          fi
+          echo "✅ No hardcoded secrets detected"
+
+      - name: Validate HTML structure
+        run: |
+          COUNT=$(grep -c "<!DOCTYPE html>" index.html || true)
+          if [ "$COUNT" -gt 1 ]; then
+            echo "❌ Multiple HTML documents in index.html (found $COUNT DOCTYPEs)"
+            exit 1
+          fi
+          echo "✅ HTML structure OK (1 document)"
+
+      - name: Check config.js exists
+        run: |
+          if [ ! -f assets/js/config.js ]; then
+            echo "❌ assets/js/config.js missing"
+            exit 1
+          fi
+          echo "✅ config.js present"
+
+  # ── Deploy ──────────────────────────────────────────────────────────────────
   deploy:
+    name: Deploy
+    needs: validate
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload static artifact
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: '.'
 
       - name: Deploy to GitHub Pages
         id: deployment

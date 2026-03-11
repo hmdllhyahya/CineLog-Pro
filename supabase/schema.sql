@@ -1,4 +1,5 @@
 -- CineLog Pro Supabase starter schema (MVP foundation)
+-- FIXED: movies table now has RLS; handle_new_user trigger is NULL-safe for anonymous auth
 create extension if not exists "pgcrypto";
 
 create table if not exists public.profiles (
@@ -85,16 +86,25 @@ create table if not exists public.review_comments (
   created_at timestamptz not null default now()
 );
 
--- Auto-create profile when auth user is created.
+-- ── Trigger: auto-create profile on new user ─────────────────────────────────
+-- FIX: NULL-safe for anonymous auth (email is NULL for anonymous users)
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  _username text;
 begin
+  if new.email is not null and new.email <> '' then
+    _username := split_part(new.email, '@', 1);
+  else
+    _username := 'user_' || substr(new.id::text, 1, 8);
+  end if;
+
   insert into public.profiles (id, username, display_name)
-  values (new.id, split_part(new.email, '@', 1), split_part(new.email, '@', 1))
+  values (new.id, _username, _username)
   on conflict (id) do nothing;
   return new;
 end;
@@ -105,28 +115,25 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();
 
--- RLS
-alter table public.profiles enable row level security;
-alter table public.logs enable row level security;
-alter table public.reviews enable row level security;
-alter table public.lists enable row level security;
-alter table public.list_items enable row level security;
-alter table public.follows enable row level security;
-alter table public.review_likes enable row level security;
+-- ── RLS ───────────────────────────────────────────────────────────────────────
+alter table public.profiles      enable row level security;
+alter table public.movies        enable row level security;  -- FIX: was missing
+alter table public.logs          enable row level security;
+alter table public.reviews       enable row level security;
+alter table public.lists         enable row level security;
+alter table public.list_items    enable row level security;
+alter table public.follows       enable row level security;
+alter table public.review_likes  enable row level security;
 alter table public.review_comments enable row level security;
 
 -- Read policies
-create policy "profiles are publicly readable" on public.profiles
-for select using (true);
-
-create policy "movies are publicly readable" on public.movies
-for select using (true);
-
-create policy "logs are publicly readable" on public.logs
-for select using (true);
-
-create policy "reviews are publicly readable" on public.reviews
-for select using (true);
+create policy "profiles are publicly readable"    on public.profiles    for select using (true);
+create policy "movies are publicly readable"      on public.movies      for select using (true);
+create policy "logs are publicly readable"        on public.logs        for select using (true);
+create policy "reviews are publicly readable"     on public.reviews     for select using (true);
+create policy "follows are publicly readable"     on public.follows     for select using (true);
+create policy "review likes are publicly readable" on public.review_likes for select using (true);
+create policy "review comments are publicly readable" on public.review_comments for select using (true);
 
 create policy "lists are publicly readable when public" on public.lists
 for select using (is_public = true or owner_id = auth.uid());
@@ -140,16 +147,14 @@ for select using (
   )
 );
 
-create policy "follows are publicly readable" on public.follows
-for select using (true);
+-- Write policies
+-- FIX: movies table — only authenticated users can insert/update
+create policy "authenticated users can insert movies" on public.movies
+for insert with check (auth.uid() is not null);
 
-create policy "review likes are publicly readable" on public.review_likes
-for select using (true);
+create policy "authenticated users can update movies" on public.movies
+for update using (auth.uid() is not null);
 
-create policy "review comments are publicly readable" on public.review_comments
-for select using (true);
-
--- Write policies (owner only)
 create policy "users can upsert own profile" on public.profiles
 for all using (id = auth.uid()) with check (id = auth.uid());
 

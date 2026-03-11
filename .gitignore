@@ -1,0 +1,26 @@
+# OS
+.DS_Store
+Thumbs.db
+*.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment / credentials (NEVER commit real keys)
+.env
+.env.local
+.env.*.local
+secrets.json
+
+# Supabase local dev
+supabase/.temp/
+supabase/seed.sql
+
+# Node (if tooling added later)
+node_modules/
+dist/
+.cache/
