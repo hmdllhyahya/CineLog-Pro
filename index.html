@@ -6,7 +6,6 @@
 <title>CineLog Pro</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
-<script src="https://js.puter.com/v2/"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#07070a;--el:#111114;--text:#f0f0f5;--mu:#8a8a96;--ac:#3d8ef8;--star:#ffad0a;--bd:rgba(255,255,255,.1);--sr:'Playfair Display',serif;--ss:'DM Sans',sans-serif}
@@ -303,6 +302,14 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
 .gbtn{padding:9px 7px;border-radius:12px;border:1px solid var(--bd);font-size:12px;font-weight:500;color:var(--mu);background:rgba(255,255,255,.04);transition:all .2s;text-align:center;cursor:none}
 .gbtn.sel{border-color:var(--ac);background:rgba(61,142,248,.14);color:var(--text)}
 
+/* ── AUTH PAGE ── */
+#auth-page{position:fixed;inset:0;z-index:2100;background:rgba(7,7,10,.98);display:none;align-items:center;justify-content:center;padding:16px}
+#auth-page.open{display:flex}
+.auth-card{width:100%;max-width:460px;background:rgba(17,17,20,.86);border:1px solid var(--bd);border-radius:18px;padding:24px}
+.auth-actions{display:grid;gap:8px;margin-top:12px}
+.auth-hint{font-size:12px;color:var(--mu);line-height:1.5;margin-top:8px}
+#auth-msg{font-size:12px;color:var(--ac);margin-top:8px;min-height:18px}
+
 /* ── MISC ── */
 .no-scroll{overflow:hidden}
 .rev{opacity:0;transform:translateY(34px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
@@ -452,6 +459,25 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
   </div>
 </div>
 
+
+<!-- ══ AUTH ══ -->
+<div id="auth-page">
+  <div class="auth-card">
+    <div class="oblogo" style="font-size:28px;justify-content:flex-start"><i class="ph-fill ph-film-strip"></i> CineLog Login</div>
+    <p class="tb" style="font-size:13px;margin-bottom:14px">Masuk atau buat akun pakai email + password. Data disimpan di Supabase.</p>
+    <div class="frow"><label>Email</label><input id="auth-identifier" class="finp" type="email" placeholder="contoh: rizly@mail.com"></div>
+    <div class="frow"><label>Username</label><input id="auth-username" class="finp" placeholder="contoh: rizlyfilm"></div>
+    <div class="frow"><label>Password</label><input id="auth-password" class="finp" type="password" placeholder="••••••••"></div>
+    <div class="auth-actions">
+      <button class="btn btnp" style="justify-content:center" onclick="authLogin()"><i class="ph-bold ph-sign-in"></i> Login</button>
+      <button class="btn btng" style="justify-content:center" onclick="authSignup()"><i class="ph-bold ph-user-plus"></i> Sign Up</button>
+      <button class="btn btna" style="justify-content:center" onclick="authForgotPassword()"><i class="ph-bold ph-envelope-simple"></i> Forgot Password</button>
+    </div>
+    <p class="auth-hint">Akun lama berbasis local storage sudah direset. Silakan buat akun baru lalu lengkapi onboarding lagi.</p>
+    <p id="auth-msg"></p>
+  </div>
+</div>
+
 <!-- ══ NAV ══ -->
 <nav id="tnav">
   <div class="nlogo" onclick="navigate('home')"><i class="ph-fill ph-film-strip"></i> CineLog</div>
@@ -465,6 +491,7 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
     <a onclick="navigate('ai')" id="n-ai">AI Engine</a>
   </div>
   <button class="logq" onclick="openLogModal()"><i class="ph-bold ph-plus"></i> Log+</button>
+  <button class="btn btng sm" id="logoutbtn" style="margin-left:8px" onclick="authLogout()"><i class="ph-bold ph-sign-out"></i> Logout</button>
 </nav>
 <button class="nfab" id="nfab" onclick="toggleFab()"><i class="ph-bold ph-list" id="fabicon"></i></button>
 <div class="fabdd" id="fabdd">
@@ -475,6 +502,7 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
   <a onclick="navigate('lists')" id="fn-lists">Lists</a>
   <a onclick="navigate('ai')" id="fn-ai">AI Engine</a>
   <a onclick="openLogModal()" style="color:var(--ac)"><i class="ph-bold ph-plus"></i> Log Film</a>
+  <a onclick="authLogout()"><i class="ph-bold ph-sign-out"></i> Logout</a>
 </div>
 
 <div id="app">
@@ -764,6 +792,8 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
   <div style="display:flex;gap:7px"><button class="btn btnp" style="flex:1;justify-content:center" onclick="saveEditList()"><i class="ph-bold ph-check"></i> Save</button><button class="btn btng" style="color:#ef4444;border-color:rgba(239,68,68,.25)" onclick="deleteCurrentList()"><i class="ph-bold ph-trash"></i></button></div></div>
 </div>
 
+<script src="assets/js/config.js"></script>
+<script src="assets/js/supabase-bootstrap.js"></script>
 <script>
 // ══════════════════════════════════════════
 // CONFIG
@@ -1067,9 +1097,10 @@ function sndMute(){
 // TMDB — fetch real backdrops
 // ══════════════════════════════════════════
 async function fetchTMDBStills(tmdbId){
-  if(!tmdbId)return null;
+  if(!tmdbId||!TMDB)return null;
   try{
     const r=await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/images?api_key=${TMDB}&include_image_language=en,null`);
+    if(!r.ok)return null;
     const d=await r.json();
     const bds=(d.backdrops||[]).slice(0,4).map(b=>TMDB_IMG+'w780'+b.file_path);
     return bds.length?bds:null;
@@ -1347,7 +1378,7 @@ function initObserver(){
 // ONBOARDING
 // ══════════════════════════════════════════
 const OB=[
-  {render:()=>`<h2 style="font-family:var(--sr);font-size:26px;font-weight:700;margin-bottom:7px">Welcome to CineLog.</h2><p class="tb" style="font-size:14px;margin-bottom:18px">Your personal cinema universe. Let's set up your profile.</p><div style="margin-bottom:14px"><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your name</label><input class="finp" id="ob-name" placeholder="e.g. Rizly" value="${obData.name||''}"></div><div><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your city</label><input class="finp" id="ob-city" placeholder="e.g. Bandung" value="${obData.city||''}"></div>`,
+  {render:()=>`<h2 style="font-family:var(--sr);font-size:26px;font-weight:700;margin-bottom:7px">Welcome to CineLog.</h2><p class="tb" style="font-size:14px;margin-bottom:18px">Set profil sinema kamu untuk memulai.</p><div style="margin-bottom:14px"><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your name</label><input class="finp" id="ob-name" placeholder="e.g. Rizly" value="${obData.name||''}"></div><div><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your city</label><input class="finp" id="ob-city" placeholder="e.g. Bandung" value="${obData.city||''}"></div>`,
    save:()=>{obData.name=document.getElementById('ob-name').value||'Cinephile';obData.city=document.getElementById('ob-city').value}},
   {render:()=>`<h2 style="font-family:var(--sr);font-size:24px;font-weight:700;margin-bottom:7px">What genres do you love?</h2><p class="tb" style="font-size:13px;margin-bottom:14px">Pick your favorites — this shapes your AI recommendations.</p><div class="ggrid">${['Thriller','Sci-Fi','Drama','Horror','Comedy','Romance','Action','Documentary','Animation','Arthouse','Crime','Fantasy'].map(g=>`<button class="gbtn${(obData.genres||[]).includes(g)?' sel':''}" onclick="toggleGenre(this,'${g}')">${g}</button>`).join('')}</div>`,
    save:()=>{}},
@@ -1366,7 +1397,7 @@ function obNext(){
   OB[obStep].save();obStep++;
   if(obStep>=OB.length){finishOb();return}renderOb();
 }
-function finishOb(){
+async function finishOb(){
   localStorage.setItem('cl_onboarded','1');
   localStorage.setItem('cl_name',obData.name||'Rizly');
   localStorage.setItem('cl_genres',JSON.stringify(obData.genres||[]));
@@ -1390,6 +1421,16 @@ function initOb(){
 // ══════════════════════════════════════════
 // PATCH: functional state and integrations
 const STORE={logs:'cl_logs_v1',lists:'cl_lists_v1',friends:'cl_friends_v1',reviews:'cl_reviews_v1',watchlist:'cl_watchlist_v1',avatar:'cl_avatar',bio:'cl_bio',loc:'cl_loc',username:'cl_username',publicId:'cl_public_id'};
+function resetLegacyStorageOnce(){
+  const k='cl_storage_reset_v3';
+  if(localStorage.getItem(k))return;
+  const keep={};
+  try{for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&key.startsWith('supabase.'))keep[key]=localStorage.getItem(key)}}catch(_){ }
+  localStorage.clear();
+  Object.keys(keep).forEach(key=>localStorage.setItem(key,keep[key]||''));
+  localStorage.setItem(k,'1');
+}
+
 const CONNECT_POOL=[
 {id:'c1001',username:'sarahm',name:'Sarah',status:'Logged Dune: Part Two — ★★★★½',avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80'},
 {id:'c1002',username:'diki_film',name:'Diki',status:'Watching The Dark Knight now',avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80'},
@@ -1409,19 +1450,18 @@ function profileUsername(){
   return (localStorage.getItem(STORE.username)||'').trim();
 }
 function profilePublicId(){
-  let pid=(localStorage.getItem(STORE.publicId)||'').trim();
-  if(!pid){pid='CL-'+__rid();localStorage.setItem(STORE.publicId,pid)}
-  return pid;
+  return (localStorage.getItem(STORE.publicId)||'').trim();
 }
+
 function ensureProfileIdentity(){
   const name=(localStorage.getItem('cl_name')||obData.name||'Cinephile').trim()||'Cinephile';
   let uname=(localStorage.getItem(STORE.username)||'').trim();
   if(!uname){uname=__slug(name).replace(/-/g,'_').slice(0,20)||('user_'+__rid().toLowerCase().slice(0,4));localStorage.setItem(STORE.username,uname)}
-  profilePublicId();
 }
+
 function syncProfileIdentityUI(){
   const pidEl=document.getElementById('profid');
-  if(pidEl)pidEl.textContent='ID: '+profilePublicId();
+  if(pidEl)pidEl.textContent='ID: '+(profilePublicId()||'Not synced yet');
   const u=(profileUsername()||'cinephile');
   const uEl=document.getElementById('editusername');
   if(uEl&&!uEl.value)uEl.value=u;
@@ -1492,34 +1532,132 @@ const CLOUD={enabled:false,ready:false,uid:'',client:null,lastError:''};
 let cloudSaveTimer=null;
 
 function cloudAvailable(){return !!(window.supabase && supabase.createClient)}
+function authMsg(t){const el=document.getElementById('auth-msg');if(el)el.textContent=t||''}
+function showAuthPage(msg){const ap=document.getElementById('auth-page');if(ap)ap.classList.add('open');authMsg(msg||'')}
+function hideAuthPage(){const ap=document.getElementById('auth-page');if(ap)ap.classList.remove('open');authMsg('')}
+function applyAuthUI(){const b=document.getElementById('logoutbtn');if(b)b.style.display=CLOUD.enabled?'inline-flex':'none'}
+
+async function refreshCloudUser(){
+  if(!CLOUD.client)return false;
+  const gu=await CLOUD.client.auth.getUser();
+  const usr=gu&&gu.data?gu.data.user:null;
+  if(!usr){CLOUD.enabled=false;CLOUD.uid='';applyAuthUI();return false}
+  CLOUD.uid=usr.id;CLOUD.enabled=true;applyAuthUI();return true;
+}
+async function syncCloudIdentity(preferredUsername=''){
+  if(!CLOUD.enabled||!CLOUD.client||!CLOUD.uid)return false;
+  const uid=CLOUD.uid;
+  const curName=(localStorage.getItem('cl_name')||obData.name||'Cinephile').trim()||'Cinephile';
+  const existing=await CLOUD.client.from('cl_profiles').select('username,public_id').eq('user_id',uid).maybeSingle();
+  const ex=(existing&&existing.data)||{};
+  const pending=localStorage.getItem('cl_pending_username')||'';
+  let uname=(preferredUsername||pending||ex.username||profileUsername()||curName).trim().toLowerCase();
+  uname=__slug(uname).replace(/-/g,'_').slice(0,20)||('user_'+uid.slice(0,4));
+  let pid=(ex.public_id||localStorage.getItem(STORE.publicId)||'').trim();
+  if(!pid)pid=uid.replace(/-/g,'').slice(0,8).toUpperCase();
+  localStorage.setItem(STORE.username,uname);
+  localStorage.setItem(STORE.publicId,pid);
+  if(pending)localStorage.removeItem('cl_pending_username');
+  await CLOUD.client.from('cl_profiles').upsert({
+    user_id:uid,
+    name:curName,
+    username:uname,
+    public_id:pid,
+    bio:localStorage.getItem(STORE.bio)||'',
+    location:localStorage.getItem(STORE.loc)||'',
+    avatar_url:localStorage.getItem(STORE.avatar)||''
+  },{onConflict:'user_id'});
+  await CLOUD.client.from('cl_user_directory').upsert({
+    user_id:uid,
+    username:uname,
+    public_id:pid,
+    display_name:curName,
+    avatar_url:localStorage.getItem(STORE.avatar)||'',
+    status_text:'On CineLog',
+    updated_at:new Date().toISOString()
+  },{onConflict:'user_id'});
+  syncProfileIdentityUI();
+  return true;
+}
 
 async function initCloudSession(){
-  if(!cloudAvailable()){CLOUD.lastError='Supabase SDK not loaded';return false}
+  if(!cloudAvailable()){CLOUD.lastError='Supabase SDK not loaded';showAuthPage(CLOUD.lastError);return false}
   try{
-    // Read credentials from config.js (window.CINELOG_CONFIG)
     const _cfg=window.CINELOG_CONFIG||{};
     const _url=_cfg.SUPABASE_URL||'';
     const _key=_cfg.SUPABASE_ANON_KEY||'';
-    if(!_url||!_key){CLOUD.lastError='Supabase config not set in config.js';return false}
+    if(!_url||!_key){CLOUD.lastError='Supabase config belum diisi (SUPABASE_URL / SUPABASE_ANON_KEY).';showAuthPage(CLOUD.lastError);return false}
     CLOUD.client=supabase.createClient(_url,_key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-    let session=(await CLOUD.client.auth.getSession()).data.session;
-    if(!session){
-      const sign=await CLOUD.client.auth.signInAnonymously();
-      if(sign.error){CLOUD.lastError=sign.error.message||'Anonymous sign-in disabled';return false}
-      session=sign.data.session||null;
-    }
-    const usr=(await CLOUD.client.auth.getUser()).data.user;
-    if(!usr){CLOUD.lastError='No Supabase user';return false}
-    CLOUD.uid=usr.id;
     const probe=await CLOUD.client.from('cl_profiles').select('user_id').limit(1);
-    if(probe.error){CLOUD.lastError='Table cl_profiles not ready';return false}
-    CLOUD.enabled=true;CLOUD.ready=true;
-    return true;
+    if(probe.error){CLOUD.lastError='Table cl_profiles not ready';showAuthPage(CLOUD.lastError);return false}
+    CLOUD.ready=true;
+    await refreshCloudUser();
+    if(CLOUD.enabled)await syncCloudIdentity();
+    if(!CLOUD.enabled)showAuthPage('Silakan Login atau Sign Up.');
+    return CLOUD.enabled;
   }catch(e){
     CLOUD.lastError=(e&&e.message)||'Cloud init failed';
     CLOUD.enabled=false;CLOUD.ready=false;
+    showAuthPage(CLOUD.lastError);
     return false;
   }
+}
+
+async function authGuest(){
+  if(!CLOUD.client){showAuthPage('Supabase belum siap. Cek config.');return}
+  const sign=await CLOUD.client.auth.signInAnonymously();
+  if(sign.error){authMsg(sign.error.message||'Gagal guest login');return}
+  await refreshCloudUser();
+  await syncCloudIdentity();
+  hideAuthPage();
+  await cloudPullState();
+  renderProfile();renderLists();renderCommunity();buildFilmLog();renderRecent();
+}
+
+async function authLogin(){
+  if(!CLOUD.client){showAuthPage('Supabase belum siap. Cek config.');return}
+  const id=(document.getElementById('auth-identifier')||{}).value||'';
+  const pw=(document.getElementById('auth-password')||{}).value||'';
+  if(!id.trim()||!pw){authMsg('Email dan password wajib diisi.');return}
+  const email=String(id||'').trim().toLowerCase();
+  const res=await CLOUD.client.auth.signInWithPassword({email,password:pw});
+  if(res.error){authMsg(res.error.message||'Login gagal');return}
+  await refreshCloudUser();
+  await syncCloudIdentity();
+  hideAuthPage();
+  await cloudPullState();
+  renderProfile();renderLists();renderCommunity();buildFilmLog();renderRecent();
+}
+
+async function authSignup(){
+  if(!CLOUD.client){showAuthPage('Supabase belum siap. Cek config.');return}
+  const id=(document.getElementById('auth-identifier')||{}).value||'';
+  const uname=((document.getElementById('auth-username')||{}).value||'').trim();
+  const pw=(document.getElementById('auth-password')||{}).value||'';
+  const email=String(id||'').trim().toLowerCase();
+  if(!email||!email.includes('@')||!pw||!uname){authMsg('Sign up butuh email valid, username, dan password.');return}
+  localStorage.setItem('cl_pending_username',uname);
+  const res=await CLOUD.client.auth.signUp({email,password:pw,options:{emailRedirectTo:location.origin+location.pathname,data:{username:uname}}});
+  if(res.error){authMsg(res.error.message||'Sign up gagal');return}
+  const u=(res.data&&res.data.user)||null;
+  if(u){await refreshCloudUser();await syncCloudIdentity(uname);}
+  authMsg('Akun dibuat. Silakan verifikasi email lalu login.');
+}
+
+async function authForgotPassword(){
+  if(!CLOUD.client){showAuthPage('Supabase belum siap. Cek config.');return}
+  const email=((document.getElementById('auth-identifier')||{}).value||'').trim().toLowerCase();
+  if(!email||!email.includes('@')){authMsg('Masukkan email valid untuk reset password.');return}
+  const r=await CLOUD.client.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+  if(r.error){authMsg(r.error.message||'Gagal kirim reset password');return}
+  authMsg('Link reset password sudah dikirim ke email.');
+}
+
+async function authLogout(){
+  if(!CLOUD.client)return;
+  await CLOUD.client.auth.signOut();
+  CLOUD.enabled=false;CLOUD.uid='';applyAuthUI();
+  showAuthPage('Anda sudah logout.');
 }
 
 async function cloudPullState(){
@@ -1564,7 +1702,7 @@ async function cloudPushState(){
   try{
     const uid=CLOUD.uid;
     const username=(profileUsername()||'cinephile').toLowerCase();
-    const publicId=profilePublicId();
+    const publicId=profilePublicId()||uid.replace(/-/g,'').slice(0,8).toUpperCase();
     const name=localStorage.getItem('cl_name')||obData.name||'Cinephile';
     const avatar=localStorage.getItem(STORE.avatar)||'';
     await CLOUD.client.from('cl_profiles').upsert({
@@ -1682,7 +1820,7 @@ function renderProfile(){
   const total=userLogs.length,yr=String(new Date().getFullYear()),thisY=userLogs.filter(x=>String((x.date||'').slice(0,4))===yr).length,revs=userLogs.filter(x=>String(x.review||'').trim()).length;
   const hs=document.querySelectorAll('#view-diary .stat h5');if(hs[0])hs[0].textContent=total;if(hs[1])hs[1].textContent=thisY;if(hs[2])hs[2].textContent=revs;
   document.getElementById('profmeta').textContent=(localStorage.getItem(STORE.loc)||'Set your location')+' · '+(localStorage.getItem(STORE.bio)||'Add a short bio');
-  const pid=document.getElementById('profid');if(pid)pid.textContent='ID: '+profilePublicId();
+  const pid=document.getElementById('profid');if(pid)pid.textContent='ID: '+(profilePublicId()||'Not synced yet');
   const b=document.querySelector('#view-diary .sh .btn.btng.sm[onclick*="filmlog"]');if(b)b.textContent='View All '+total;
   const fs=document.querySelector('#view-filmlog .ph .tb');if(fs)fs.textContent='All '+total+' films — sorted & filtered.';
   renderWatchlistSection();
@@ -1695,7 +1833,7 @@ function renderRecent(){
   initObserver();
 }
 
-async function fetchTrending(){try{const r=await fetch('https://api.themoviedb.org/3/trending/all/week?api_key='+TMDB);const d=await r.json();trendingCache=(d.results||[]).filter(x=>x.media_type==='movie'||x.media_type==='tv').slice(0,10)}catch(_){trendingCache=[]}}
+async function fetchTrending(){if(!TMDB){trendingCache=[];return}try{const r=await fetch('https://api.themoviedb.org/3/trending/all/week?api_key='+TMDB);if(!r.ok){trendingCache=[];return}const d=await r.json();trendingCache=(d.results||[]).filter(x=>x.media_type==='movie'||x.media_type==='tv').slice(0,10)}catch(_){trendingCache=[]}}
 
 function renderCommunity(){
   const c=document.getElementById('view-community');if(!c)return;const p=c.querySelectorAll('.cpanel');const feed=c.querySelector('.feed');if(!p[0]||!p[1]||!feed)return;
@@ -1717,7 +1855,8 @@ function renderConnectResults(rows){
   out.innerHTML=rows.map((r,i)=>'<div class="fri"><div class="fav3" style="background-image:url(\''+__safe(r.avatar||'')+'\')"></div><div class="fri-info"><h4>'+__safe(r.name)+' <span style="color:var(--mu);font-size:12px">@'+__safe(r.username||'cinephile')+'</span></h4><p>'+__safe(r.id)+'</p></div><button class="btn btng sm" onclick="addFriend('+i+')">Add</button></div>').join('');
 }
 async function searchConnectPlus(){
-  const q=((document.getElementById('connect-query')||{}).value||'').trim().toLowerCase();
+  const raw=((document.getElementById('connect-query')||{}).value||'').trim().toLowerCase();
+  const q=raw.replace(/^@/,'');
   const out=document.getElementById('connect-results');
   if(!out)return;
   if(!q){out.innerHTML='';connectResults=[];return}
@@ -1725,16 +1864,20 @@ async function searchConnectPlus(){
 
   if(CLOUD.enabled&&CLOUD.client){
     try{
-      const dataQ=await CLOUD.client.from('cl_user_directory').select('user_id,username,public_id,display_name,avatar_url,status_text').or('username.ilike.%'+q+'%,public_id.ilike.%'+q+'%,display_name.ilike.%'+q+'%').limit(8);
+      const safe=q.replace(/[,()]/g,'');
+      const dataQ=await CLOUD.client.from('cl_user_directory').select('user_id,username,public_id,display_name,avatar_url,status_text').or('username.ilike.'+safe+',public_id.ilike.'+safe+',display_name.ilike.'+safe).limit(8);
       if(!dataQ.error){
-        const rows=(dataQ.data||[]).filter(x=>x.user_id!==CLOUD.uid).map(mapDirectoryRow);
+        const rows=(dataQ.data||[])
+          .filter(x=>x.user_id!==CLOUD.uid)
+          .filter(x=>String(x.username||'').toLowerCase()===q||String(x.public_id||'').toLowerCase()===q||String(x.display_name||'').toLowerCase()===q)
+          .map(mapDirectoryRow);
         renderConnectResults(rows);
         if(rows.length)return;
       }
     }catch(_){ }
   }
 
-  const rows=CONNECT_POOL.filter(x=>x.username.toLowerCase().includes(q)||x.id.toLowerCase().includes(q)||x.name.toLowerCase().includes(q)).slice(0,8);
+  const rows=CONNECT_POOL.filter(x=>x.username.toLowerCase()===q||x.id.toLowerCase()===q||x.name.toLowerCase()===q).slice(0,8);
   renderConnectResults(rows);
 }
 function addFriend(idx){
@@ -1745,10 +1888,10 @@ function addFriend(idx){
   renderCommunity();
 }
 
-async function searchLogMovie(q){const out=document.getElementById('logsearch-results');if(!out)return;clearTimeout(logSearchTimer);if(!q||q.trim().length<2){out.innerHTML='';return}logSearchTimer=setTimeout(async()=>{out.innerHTML='<div class="tb" style="font-size:12px">Searching...</div>';try{const r=await fetch('https://api.themoviedb.org/3/search/multi?api_key='+TMDB+'&query='+encodeURIComponent(q.trim()));const d=await r.json();const rows=(d.results||[]).filter(x=>x.media_type==='movie'||x.media_type==='tv').slice(0,6);if(!rows.length){out.innerHTML='<div class="tb" style="font-size:12px">No results.</div>';return}window.__tm=Object.create(null);rows.forEach(x=>window.__tm['m-'+x.media_type+'-'+x.id]=x);out.innerHTML=rows.map(x=>'<button class="btn btng sm" style="justify-content:flex-start;text-align:left" onclick="selectLogMovie(\'m-'+x.media_type+'-'+x.id+'\')">'+(x.poster_path?'<img src="'+TMDB_IMG+'w92'+x.poster_path+'" style="width:26px;height:38px;object-fit:cover;border-radius:6px;margin-right:8px" alt="">':'')+'<span>'+__safe(x.title||x.name||'Untitled')+' ('+__safe((x.release_date||x.first_air_date||'').slice(0,4)||'—')+')</span></button>').join('')}catch(_){out.innerHTML='<div class="tb" style="font-size:12px">TMDB search failed.</div>'}},250)}
+async function searchLogMovie(q){const out=document.getElementById('logsearch-results');if(!out)return;clearTimeout(logSearchTimer);if(!q||q.trim().length<2){out.innerHTML='';return}if(!TMDB){out.innerHTML='<div class="tb" style="font-size:12px">TMDB key belum diisi. Isi <code>assets/js/config.js</code> untuk mengaktifkan pencarian.</div>';return}logSearchTimer=setTimeout(async()=>{out.innerHTML='<div class="tb" style="font-size:12px">Searching...</div>';try{const r=await fetch('https://api.themoviedb.org/3/search/multi?api_key='+TMDB+'&query='+encodeURIComponent(q.trim()));if(!r.ok){out.innerHTML='<div class="tb" style="font-size:12px">TMDB search failed.</div>';return}const d=await r.json();const rows=(d.results||[]).filter(x=>x.media_type==='movie'||x.media_type==='tv').slice(0,6);if(!rows.length){out.innerHTML='<div class="tb" style="font-size:12px">No results.</div>';return}window.__tm=Object.create(null);rows.forEach(x=>window.__tm['m-'+x.media_type+'-'+x.id]=x);out.innerHTML=rows.map(x=>'<button class="btn btng sm" style="justify-content:flex-start;text-align:left" onclick="selectLogMovie(\'m-'+x.media_type+'-'+x.id+'\')">'+(x.poster_path?'<img src="'+TMDB_IMG+'w92'+x.poster_path+'" style="width:26px;height:38px;object-fit:cover;border-radius:6px;margin-right:8px" alt="">':'')+'<span>'+__safe(x.title||x.name||'Untitled')+' ('+__safe((x.release_date||x.first_air_date||'').slice(0,4)||'—')+')</span></button>').join('')}catch(_){out.innerHTML='<div class="tb" style="font-size:12px">TMDB search failed.</div>'}},250)}
 function selectLogMovie(id){const x=window.__tm?window.__tm[id]:null;if(!x)return;logSelectedMovie=x;document.getElementById('logtitle').textContent=x.title||x.name||'Movie'}
 
-function ensureMovie(log){let m=MOVIES.find(x=>x.id===log.id);if(m)return m;m={id:log.id,title:log.title,year:String(log.year||''),director:'Unknown',rating:String(log.rating||0),tmdbId:log.tmdbId||null,logline:'Logged from your diary.',synopsis:'Details are updating from TMDB.',quotes:[{t:'Your personal log entry.',a:obData.name||'You',r:''}],imdb:'—',rt:'—',videos:[{label:'Trailer',id:'zSWdZVtXT7E'}],poster:log.poster||'',stills:[log.poster||''],theme:(curMovie&&curMovie.theme)||{colors:['#0d1b4b','#1a0a2e','#0a1628'],speed:.4,behavior:'default'},why:'Based on your own watch history.',sndId:null,sndTitle:'Soundtrack',sndComp:'',funFacts:['Fetching dynamic facts...']};MOVIES.push(m);if(log.tmdbId){fetch('https://api.themoviedb.org/3/'+(log.mediaType==='tv'?'tv':'movie')+'/'+log.tmdbId+'?api_key='+TMDB).then(r=>r.json()).then(d=>{m.synopsis=d.overview||m.synopsis;m.logline=(d.tagline||m.logline||'').slice(0,160);m.year=String((d.release_date||d.first_air_date||m.year||'').slice(0,4));m.rating=((Number(d.vote_average)||0)/2).toFixed(1);if(d.poster_path)m.poster=TMDB_IMG+'w500'+d.poster_path;fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent((d.title||d.name||m.title)+' '+m.year+' film')).then(x=>x.ok?x.json():null).then(w=>{if(w&&w.extract)m.funFacts=[w.extract.split('. ').slice(0,2).join('. ')+'.']}).catch(()=>{})}).catch(()=>{})}return m}
+function ensureMovie(log){let m=MOVIES.find(x=>x.id===log.id);if(m)return m;m={id:log.id,title:log.title,year:String(log.year||''),director:'Unknown',rating:String(log.rating||0),tmdbId:log.tmdbId||null,logline:'Logged from your diary.',synopsis:'Details are updating from TMDB.',quotes:[{t:'Your personal log entry.',a:obData.name||'You',r:''}],imdb:'—',rt:'—',videos:[{label:'Trailer',id:'zSWdZVtXT7E'}],poster:log.poster||'',stills:[log.poster||''],theme:(curMovie&&curMovie.theme)||{colors:['#0d1b4b','#1a0a2e','#0a1628'],speed:.4,behavior:'default'},why:'Based on your own watch history.',sndId:null,sndTitle:'Soundtrack',sndComp:'',funFacts:['Fetching dynamic facts...']};MOVIES.push(m);if(log.tmdbId&&TMDB){fetch('https://api.themoviedb.org/3/'+(log.mediaType==='tv'?'tv':'movie')+'/'+log.tmdbId+'?api_key='+TMDB).then(r=>r.ok?r.json():null).then(d=>{if(!d)return;m.synopsis=d.overview||m.synopsis;m.logline=(d.tagline||m.logline||'').slice(0,160);m.year=String((d.release_date||d.first_air_date||m.year||'').slice(0,4));m.rating=((Number(d.vote_average)||0)/2).toFixed(1);if(d.poster_path)m.poster=TMDB_IMG+'w500'+d.poster_path;fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent((d.title||d.name||m.title)+' '+m.year+' film')).then(x=>x.ok?x.json():null).then(w=>{if(w&&w.extract)m.funFacts=[w.extract.split('. ').slice(0,2).join('. ')+'.']}).catch(()=>{})}).catch(()=>{})}return m}
 
 function openLogModal(){ensureEnhancements();logSelectedMovie=curMovie&&curMovie.tmdbId?{id:curMovie.tmdbId,media_type:'movie',title:curMovie.title,release_date:String(curMovie.year)+'-01-01',poster_path:(curMovie.poster||'').split('/w500/')[1]||null}:null;document.getElementById('logtitle').textContent=(logSelectedMovie&&logSelectedMovie.title)||curMovie.title||'Movie';const d=document.getElementById('logdate');if(d)d.value=__today();const r=document.getElementById('logreview');if(r)r.value='';const s=document.getElementById('logsearch');if(s)s.value='';const rs=document.getElementById('logsearch-results');if(rs)rs.innerHTML='';logRating=0;litSt(0);openM('log-modal')}
 
@@ -1762,10 +1905,31 @@ populateList=function(id){const l=userLists[id];if(!l){document.getElementById('
 buildFilmLog=function(){const g=document.getElementById('lgrid');let f=[...userLogs];const n=new Date();if(logSort==='rating')f.sort((a,b)=>Number(b.rating||0)-Number(a.rating||0));if(logSort==='recent')f.sort((a,b)=>(b.date||'').localeCompare(a.date||''));if(logSort==='year')f=f.filter(x=>String((x.date||'').slice(0,4))===String(n.getFullYear()));if(logSort==='month')f=f.filter(x=>String((x.date||'').slice(0,7))===(n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')));if(logSort==='week'){const s=new Date(n);s.setDate(n.getDate()-6);f=f.filter(x=>{const d=new Date(x.date||'');return !Number.isNaN(d.valueOf())&&d>=s&&d<=n})}if(!f.length){g.innerHTML='<div class="tb" style="font-size:13px">No logged films yet. Use Log+ to add your first title.</div>';return}g.innerHTML='';f.forEach(m=>{const d=document.createElement('div');d.className='lgi';d.innerHTML='<div class="lgp" style="background-image:url(\''+__safe(m.poster||'')+'\')"><div class="lgr">★'+__safe(m.rating||0)+'</div></div><h4>'+__safe(m.title)+'</h4><p>'+__safe(m.year||'')+'</p>';d.onclick=()=>{const mv=MOVIES.find(x=>x.id===m.id)||ensureMovie(m);if(mv){populateMovie(mv);navigate('movie')}};g.appendChild(d)})}
 
 function showAID(msg){const e=document.getElementById('ai-disclaimer');if(!e)return;e.textContent=msg||'AI analysis uses Puter. Some browsers may require Puter sign-in.';e.style.display='block'}
-const hasPuter=()=>!!(window.puter&&puter.ai&&typeof puter.ai.chat==='function');
-runAI=function(){const btn=document.getElementById('aibtn'),loader=document.getElementById('ai-loader'),result=document.getElementById('ai-result'),wrap=document.getElementById('aiwrap');btn.style.display='none';result.style.display='none';loader.style.display='block';wrap.classList.add('aianalyzin');analyzing=true;setTheme({colors:['#7c3aed','#af002d','#319197','#ff7a18','#3d8ef8'],speed:3,behavior:'chaos'});const genres=(obData.genres||[]).join(', ')||'Drama, Thriller';const sample=userLogs.slice(0,8).map(x=>x.title+' ('+(x.rating||0)+')').join(', ')||'No logs yet';const prompt='You are a film recommendation AI for CineLog. User: '+(obData.name||'User')+'. Genres: '+genres+'. Recent logs: '+sample+'. Return ONLY JSON: {"title":"...","year":"...","match":95,"reason":"..."}';if(!hasPuter()){showAID();loader.style.display='none';wrap.classList.remove('aianalyzin');analyzing=false;document.getElementById('ai-rec-title').textContent='Interstellar (2014)';document.getElementById('ai-rec-text').textContent='Fallback recommendation based on current profile and trends.';document.querySelector('.mbadge').textContent='84% Match';result.style.display='block';btn.style.display='inline-flex';btn.innerHTML='<i class="ph-bold ph-arrow-clockwise"></i> Analyze Again';setTheme({colors:['#7c3aed','#3d8ef8','#319197'],speed:.7,behavior:'orbital'});return}puter.ai.chat(prompt,{model:'claude-sonnet-4-6'}).then(res=>{loader.style.display='none';wrap.classList.remove('aianalyzin');analyzing=false;try{const txt=res.message.content[0].text.replace(/```json|```/g,'').trim();const rec=JSON.parse(txt);document.getElementById('ai-rec-title').textContent=(rec.title||'Unknown')+' ('+(rec.year||'—')+')';document.getElementById('ai-rec-text').textContent=rec.reason||'No explanation returned.';document.querySelector('.mbadge').textContent=(rec.match||88)+'% Match'}catch(_){document.getElementById('ai-rec-title').textContent='The Dark Knight (2008)';document.getElementById('ai-rec-text').textContent='Based on your profile, this remains a strong high-confidence pick.';document.querySelector('.mbadge').textContent='89% Match'}result.style.display='block';btn.style.display='inline-flex';btn.innerHTML='<i class="ph-bold ph-arrow-clockwise"></i> Analyze Again';setTheme({colors:['#7c3aed','#3d8ef8','#319197'],speed:.7,behavior:'orbital'})}).catch(()=>{loader.style.display='none';wrap.classList.remove('aianalyzin');analyzing=false;showAID('AI provider unavailable or requires sign-in. Fallback activated.');document.getElementById('ai-rec-title').textContent='Parasite (2019)';document.getElementById('ai-rec-text').textContent='Fallback recommendation generated without external AI.';document.querySelector('.mbadge').textContent='82% Match';result.style.display='block';btn.style.display='inline-flex';btn.innerHTML='<i class="ph-bold ph-arrow-clockwise"></i> Analyze Again';setTheme({colors:['#7c3aed','#3d8ef8','#319197'],speed:.7,behavior:'orbital'})})}
+const hasPuter=()=>!!(window.puter&&window.puter.ai&&typeof window.puter.ai.chat==='function');
+let puterLoadPromise=null;
+function ensurePuterSDK(){
+  if(hasPuter())return Promise.resolve(true);
+  if(puterLoadPromise)return puterLoadPromise;
+  puterLoadPromise=new Promise(resolve=>{
+    const ex=document.querySelector('script[data-puter-sdk="1"]');
+    if(ex){
+      ex.addEventListener('load',()=>resolve(hasPuter()),{once:true});
+      ex.addEventListener('error',()=>resolve(false),{once:true});
+      return;
+    }
+    const sc=document.createElement('script');
+    sc.src='https://js.puter.com/v2/';
+    sc.async=true;
+    sc.dataset.puterSdk='1';
+    sc.onload=()=>resolve(hasPuter());
+    sc.onerror=()=>resolve(false);
+    document.head.appendChild(sc);
+  });
+  return puterLoadPromise;
+}
+runAI=async function(){const btn=document.getElementById('aibtn'),loader=document.getElementById('ai-loader'),result=document.getElementById('ai-result'),wrap=document.getElementById('aiwrap');btn.style.display='none';result.style.display='none';loader.style.display='block';wrap.classList.add('aianalyzin');analyzing=true;setTheme({colors:['#7c3aed','#af002d','#319197','#ff7a18','#3d8ef8'],speed:3,behavior:'chaos'});const genres=(obData.genres||[]).join(', ')||'Drama, Thriller';const sample=userLogs.slice(0,8).map(x=>x.title+' ('+(x.rating||0)+')').join(', ')||'No logs yet';const prompt='You are a film recommendation AI for CineLog. User: '+(obData.name||'User')+'. Genres: '+genres+'. Recent logs: '+sample+'. Return ONLY JSON: {"title":"...","year":"...","match":95,"reason":"..."}';if(!hasPuter()){const ok=await ensurePuterSDK();if(!ok){showAID('AI provider unavailable or blocked. Fallback activated.');loader.style.display='none';wrap.classList.remove('aianalyzin');analyzing=false;document.getElementById('ai-rec-title').textContent='Interstellar (2014)';document.getElementById('ai-rec-text').textContent='Fallback recommendation based on current profile and trends.';document.querySelector('.mbadge').textContent='84% Match';result.style.display='block';btn.style.display='inline-flex';btn.innerHTML='<i class="ph-bold ph-arrow-clockwise"></i> Analyze Again';setTheme({colors:['#7c3aed','#3d8ef8','#319197'],speed:.7,behavior:'orbital'});return}}window.puter.ai.chat(prompt,{model:'claude-sonnet-4-6'}).then(res=>{loader.style.display='none';wrap.classList.remove('aianalyzin');analyzing=false;try{const txt=res.message.content[0].text.replace(/```json|```/g,'').trim();const rec=JSON.parse(txt);document.getElementById('ai-rec-title').textContent=(rec.title||'Unknown')+' ('+(rec.year||'—')+')';document.getElementById('ai-rec-text').textContent=rec.reason||'No explanation returned.';document.querySelector('.mbadge').textContent=(rec.match||88)+'% Match'}catch(_){document.getElementById('ai-rec-title').textContent='The Dark Knight (2008)';document.getElementById('ai-rec-text').textContent='Based on your profile, this remains a strong high-confidence pick.';document.querySelector('.mbadge').textContent='89% Match'}result.style.display='block';btn.style.display='inline-flex';btn.innerHTML='<i class="ph-bold ph-arrow-clockwise"></i> Analyze Again';setTheme({colors:['#7c3aed','#3d8ef8','#319197'],speed:.7,behavior:'orbital'})}).catch(()=>{loader.style.display='none';wrap.classList.remove('aianalyzin');analyzing=false;showAID('AI provider unavailable or requires sign-in. Fallback activated.');document.getElementById('ai-rec-title').textContent='Parasite (2019)';document.getElementById('ai-rec-text').textContent='Fallback recommendation generated without external AI.';document.querySelector('.mbadge').textContent='82% Match';result.style.display='block';btn.style.display='inline-flex';btn.innerHTML='<i class="ph-bold ph-arrow-clockwise"></i> Analyze Again';setTheme({colors:['#7c3aed','#3d8ef8','#319197'],speed:.7,behavior:'orbital'})})}
 
-analyzeStyle=function(){const loader=document.getElementById('style-loader'),result=document.getElementById('style-result');loader.style.display='block';result.style.display='none';const genres=(obData.genres||[]).join(', ')||'Drama, Thriller';const prompt='Analyze this cinephile briefly. Genres: '+genres+'. Logs: '+userLogs.length+'. Return JSON: {"description":"...","tags":["...","..."]}';if(!hasPuter()){showAID();loader.style.display='none';result.style.display='block';document.getElementById('style-desc').textContent='You are building your cinematic profile. Log more titles to sharpen identity insights.';document.getElementById('style-tags').innerHTML='<span class="stag tgp">New Cinephile</span><span class="stag tgs">Explorer</span>';document.getElementById('styletag').textContent='✦ New Cinephile · Explorer';return}puter.ai.chat(prompt,{model:'claude-sonnet-4-6'}).then(res=>{loader.style.display='none';result.style.display='block';try{const txt=res.message.content[0].text.replace(/```json|```/g,'').trim();const d=JSON.parse(txt);const tags=(d.tags||[]).slice(0,5);document.getElementById('style-desc').textContent=d.description||'No description.';document.getElementById('style-tags').innerHTML=tags.map((t,i)=>'<span class="stag '+(i<2?'tgp':'tgs')+'">'+__safe(t)+'</span>').join('');document.getElementById('styletag').textContent='✦ '+(tags.slice(0,2).join(' · ')||'CineLog Member')}catch(_){document.getElementById('style-desc').textContent='Your style profile is evolving. Add more reviews for sharper analysis.';document.getElementById('style-tags').innerHTML='<span class="stag tgp">Cine Explorer</span><span class="stag tgs">Pattern Builder</span>'}}).catch(()=>{loader.style.display='none';result.style.display='block';showAID();document.getElementById('style-desc').textContent='AI style analysis unavailable. Using local fallback profile.';document.getElementById('style-tags').innerHTML='<span class="stag tgp">Cine Explorer</span><span class="stag tgs">Pattern Builder</span>'})}
+analyzeStyle=async function(){const loader=document.getElementById('style-loader'),result=document.getElementById('style-result');loader.style.display='block';result.style.display='none';const genres=(obData.genres||[]).join(', ')||'Drama, Thriller';const prompt='Analyze this cinephile briefly. Genres: '+genres+'. Logs: '+userLogs.length+'. Return JSON: {"description":"...","tags":["...","..."]}';if(!hasPuter()){const ok=await ensurePuterSDK();if(!ok){showAID();loader.style.display='none';result.style.display='block';document.getElementById('style-desc').textContent='You are building your cinematic profile. Log more titles to sharpen identity insights.';document.getElementById('style-tags').innerHTML='<span class="stag tgp">New Cinephile</span><span class="stag tgs">Explorer</span>';document.getElementById('styletag').textContent='✦ New Cinephile · Explorer';return}}window.puter.ai.chat(prompt,{model:'claude-sonnet-4-6'}).then(res=>{loader.style.display='none';result.style.display='block';try{const txt=res.message.content[0].text.replace(/```json|```/g,'').trim();const d=JSON.parse(txt);const tags=(d.tags||[]).slice(0,5);document.getElementById('style-desc').textContent=d.description||'No description.';document.getElementById('style-tags').innerHTML=tags.map((t,i)=>'<span class="stag '+(i<2?'tgp':'tgs')+'">'+__safe(t)+'</span>').join('');document.getElementById('styletag').textContent='✦ '+(tags.slice(0,2).join(' · ')||'CineLog Member')}catch(_){document.getElementById('style-desc').textContent='Your style profile is evolving. Add more reviews for sharper analysis.';document.getElementById('style-tags').innerHTML='<span class="stag tgp">Cine Explorer</span><span class="stag tgs">Pattern Builder</span>'}}).catch(()=>{loader.style.display='none';result.style.display='block';showAID();document.getElementById('style-desc').textContent='AI style analysis unavailable. Using local fallback profile.';document.getElementById('style-tags').innerHTML='<span class="stag tgp">Cine Explorer</span><span class="stag tgs">Pattern Builder</span>'})}
 
 saveProfile=function(){
   const n=(document.getElementById('editname').value||'').trim()||'Cinephile';
@@ -1788,6 +1952,7 @@ saveProfile=function(){
     syncProfileIdentityUI();
     renderProfile();
     saveState();
+    if(CLOUD.enabled)syncCloudIdentity(un||n);
     closeM('profile-modal');
   };
   if(f){const rd=new FileReader();rd.onload=()=>apply(String(rd.result||''));rd.readAsDataURL(f);return}
@@ -1850,12 +2015,12 @@ const __nav=navigate;navigate=function(v){
   if(!isPopNavigating)syncRoute(viewId,false);
 }
 
-const __popMovie=populateMovie;populateMovie=async function(m){await __popMovie(m);if(m&&m.tmdbId){try{const r=await fetch('https://api.themoviedb.org/3/'+((m.mediaType==='tv')?'tv':'movie')+'/'+m.tmdbId+'?api_key='+TMDB);const d=await r.json();const q=encodeURIComponent((d.title||d.name||m.title||'')+' '+((d.release_date||d.first_air_date||m.year||'').slice(0,4))+' film');const w=await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+q);if(w.ok){const wd=await w.json();if(wd&&wd.extract){m.funFacts=[wd.extract.split('. ').slice(0,2).join('. ')+'.'];ffIdx=0;showFF(m)}}}catch(_){}}};
+const __popMovie=populateMovie;populateMovie=async function(m){await __popMovie(m);if(m&&m.tmdbId&&TMDB){try{const r=await fetch('https://api.themoviedb.org/3/'+((m.mediaType==='tv')?'tv':'movie')+'/'+m.tmdbId+'?api_key='+TMDB);if(!r.ok)return;const d=await r.json();const q=encodeURIComponent((d.title||d.name||m.title||'')+' '+((d.release_date||d.first_air_date||m.year||'').slice(0,4))+' film');const w=await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+q);if(w.ok){const wd=await w.json();if(wd&&wd.extract){m.funFacts=[wd.extract.split('. ').slice(0,2).join('. ')+'.'];ffIdx=0;showFF(m)}}}catch(_){}}};
 const __loadSnd=loadSnd;loadSnd=async function(m){__loadSnd(m);sndPreview='';if(m&&m.sndId)return;try{const r=await fetch('https://itunes.apple.com/search?media=music&limit=1&term='+encodeURIComponent((m.title||'')+' soundtrack'));const d=await r.json();const h=(d.results||[])[0];if(h&&h.previewUrl){sndPreview=h.previewUrl;document.getElementById('sndt').textContent=h.trackName||'Soundtrack Preview';document.getElementById('snds').textContent=h.artistName||''}}catch(_){}}
 const __sndPlay=sndPlay;sndPlay=function(){const a=document.getElementById('snd-audio');if(sndPreview&&a&&(!curMovie.sndId||!sndPlayer||!sndPlayer.playVideo)){if(!a.src)a.src=sndPreview;if(sndIsPlaying){a.pause();sndIsPlaying=false;document.getElementById('sndpico').className='ph-bold ph-play';document.getElementById('sndpbtn').classList.remove('playing')}else{a.play().catch(()=>{});sndIsPlaying=true;document.getElementById('sndpico').className='ph-bold ph-pause';document.getElementById('sndpbtn').classList.add('playing')}return}__sndPlay()}
 const __sndMute=sndMute;sndMute=function(){const a=document.getElementById('snd-audio');if(sndPreview&&a&&(!curMovie.sndId||!sndPlayer)){a.muted=!a.muted;document.getElementById('sndmico').className=a.muted?'ph-bold ph-speaker-slash':'ph-bold ph-speaker-high';return}__sndMute()}
 
-window.searchLogMovie=searchLogMovie;window.selectLogMovie=selectLogMovie;window.saveLog=saveLog;window.createList=createList;window.searchConnectPlus=searchConnectPlus;window.addFriend=addFriend;
+window.searchLogMovie=searchLogMovie;window.selectLogMovie=selectLogMovie;window.saveLog=saveLog;window.createList=createList;window.searchConnectPlus=searchConnectPlus;window.addFriend=addFriend;window.authGuest=authGuest;window.authLogin=authLogin;window.authSignup=authSignup;window.authForgotPassword=authForgotPassword;window.authLogout=authLogout;
 
 function setMobileViewportHeight(){
   const vh=window.innerHeight*0.01;
@@ -1868,10 +2033,12 @@ document.addEventListener('DOMContentLoaded',async()=>{
   window.addEventListener('resize',setMobileViewportHeight,{passive:true});
   window.addEventListener('orientationchange',setMobileViewportHeight,{passive:true});
   ensureEnhancements();
+  resetLegacyStorageOnce();
   buildCarousel();applyHero(MOVIES[0]);initObserver();bindCursor();initOb();
   await fetchTrending();
   await initCloudSession();
   await loadState();
+  applyAuthUI();
   const initialView=urlToViewId();
   isPopNavigating=true;
   navigate(initialView||'home');
@@ -1990,7 +2157,14 @@ function searchAddFilm(q) {
   results.forEach(m => {
     const d = document.createElement('div');
     d.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px;border-radius:9px;background:rgba(255,255,255,.05);cursor:pointer';
-    d.innerHTML = '<div style="width:32px;height:48px;border-radius:5px;background-image:url(''+__safe(m.poster||'')+'');background-size:cover;flex-shrink:0"></div><div style="flex:1"><strong style="font-size:13px">'+__safe(m.title)+'</strong><p style="font-size:11px;color:var(--mu)">'+__safe(m.year||'')+'</p></div><button class="btn btna sm" style="font-size:11px" onclick="addFilmToCurrentList(''+__safe(m.id)+'')">+ Add</button>';
+    d.innerHTML = `<div style="width:32px;height:48px;border-radius:5px;background-image:url('${__safe(m.poster||'')}');background-size:cover;flex-shrink:0"></div><div style="flex:1"><strong style="font-size:13px">${__safe(m.title)}</strong><p style="font-size:11px;color:var(--mu)">${__safe(m.year||'')}</p></div><button class="btn btna sm" style="font-size:11px">+ Add</button>`;
+    const addBtn = d.querySelector('button');
+    if (addBtn) {
+      addBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        addFilmToCurrentList(m.id);
+      });
+    }
     r.appendChild(d);
   });
 }
