@@ -6,6 +6,9 @@
 <title>CineLog Pro</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/supabase-bootstrap.js"></script>
 <style>
 :root{--bg:#07070a;--el:#111114;--text:#f0f0f5;--muted:#8a8a96;--accent:#3d8ef8;--star:#ffad0a;--border:rgba(255,255,255,.1);--serif:'Playfair Display',serif;--sans:'DM Sans',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -1263,6 +1266,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(fade){fade.style.transition='opacity .5s';fade.style.pointerEvents='none'}
   const cnt=document.getElementById('hero-cnt');
   if(cnt)cnt.style.transition='opacity .38s,transform .38s';
+
+  // Supabase bootstrap (non-blocking fallback to local mode)
+  if (window.supabaseReady) {
+    window.supabaseReady.then(client => {
+      if (client) console.info('[CineLog] Supabase connected.');
+    });
+  }
 });
 
 // Expose globals
