@@ -1,3 +1,7 @@
+-- LEGACY REFERENCE ONLY
+-- Current app runtime uses cl_* tables in supabase/cl_schema.sql
+-- Keep this file for historical context; do not apply for current frontend runtime.
+
 -- CineLog Pro Supabase starter schema (MVP foundation)
 -- FIXED: movies table now has RLS; handle_new_user trigger is NULL-safe for anonymous auth
 create extension if not exists "pgcrypto";
