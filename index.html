@@ -464,16 +464,15 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
 <div id="auth-page">
   <div class="auth-card">
     <div class="oblogo" style="font-size:28px;justify-content:flex-start"><i class="ph-fill ph-film-strip"></i> CineLog Login</div>
-    <p class="tb" style="font-size:13px;margin-bottom:14px">Masuk atau buat akun pakai email + password. Data disimpan di Supabase.</p>
-    <div class="frow"><label>Email</label><input id="auth-identifier" class="finp" type="email" placeholder="contoh: rizly@mail.com"></div>
-    <div class="frow"><label>Username</label><input id="auth-username" class="finp" placeholder="contoh: rizlyfilm"></div>
+    <p class="tb" style="font-size:13px;margin-bottom:14px">Masuk dengan username/ID + password. Data akan sinkron ke Supabase.</p>
+    <div class="frow"><label>Username / ID / Email</label><input id="auth-identifier" class="finp" placeholder="contoh: rizly atau rizly@mail.com"></div>
     <div class="frow"><label>Password</label><input id="auth-password" class="finp" type="password" placeholder="••••••••"></div>
     <div class="auth-actions">
       <button class="btn btnp" style="justify-content:center" onclick="authLogin()"><i class="ph-bold ph-sign-in"></i> Login</button>
-      <button class="btn btng" style="justify-content:center" onclick="authSignup()"><i class="ph-bold ph-user-plus"></i> Sign Up</button>
-      <button class="btn btna" style="justify-content:center" onclick="authForgotPassword()"><i class="ph-bold ph-envelope-simple"></i> Forgot Password</button>
+      <button class="btn btng" style="justify-content:center" onclick="authSetPassword()"><i class="ph-bold ph-key"></i> Buat Password (akun profil lama)</button>
+      <button class="btn btna" style="justify-content:center" onclick="authGuest()"><i class="ph-bold ph-user"></i> Lanjut sebagai Guest</button>
     </div>
-    <p class="auth-hint">Akun lama berbasis local storage sudah direset. Silakan buat akun baru lalu lengkapi onboarding lagi.</p>
+    <p class="auth-hint">Untuk akun profil lama yang belum punya password: login dulu sebagai Guest, isi username/id yang dipakai profile Anda, lalu klik <b>Buat Password</b>.</p>
     <p id="auth-msg"></p>
   </div>
 </div>
@@ -1379,8 +1378,8 @@ function initObserver(){
 // ONBOARDING
 // ══════════════════════════════════════════
 const OB=[
-  {render:()=>`<h2 style="font-family:var(--sr);font-size:26px;font-weight:700;margin-bottom:7px">Welcome to CineLog.</h2><p class="tb" style="font-size:14px;margin-bottom:18px">Set profil sinema kamu untuk memulai.</p><div style="margin-bottom:14px"><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your name</label><input class="finp" id="ob-name" placeholder="e.g. Rizly" value="${obData.name||''}"></div><div><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your city</label><input class="finp" id="ob-city" placeholder="e.g. Bandung" value="${obData.city||''}"></div>`,
-   save:()=>{obData.name=document.getElementById('ob-name').value||'Cinephile';obData.city=document.getElementById('ob-city').value}},
+  {render:()=>`<h2 style="font-family:var(--sr);font-size:26px;font-weight:700;margin-bottom:7px">Welcome to CineLog.</h2><p class="tb" style="font-size:14px;margin-bottom:18px">Buat akun dulu, lalu lanjut set profil sinema kamu.</p><div style="margin-bottom:10px"><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Email</label><input class="finp" id="ob-email" type="email" placeholder="e.g. rizly@mail.com" value="${obData.email||''}"></div><div style="margin-bottom:14px"><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Password</label><input class="finp" id="ob-pass" type="password" placeholder="Minimal 6 karakter"></div><div style="margin-bottom:14px"><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your name</label><input class="finp" id="ob-name" placeholder="e.g. Rizly" value="${obData.name||''}"></div><div><label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:7px">Your city</label><input class="finp" id="ob-city" placeholder="e.g. Bandung" value="${obData.city||''}"></div>`,
+   save:()=>{obData.email=(document.getElementById('ob-email').value||'').trim();obData.password=(document.getElementById('ob-pass').value||'').trim();obData.name=document.getElementById('ob-name').value||'Cinephile';obData.city=document.getElementById('ob-city').value}},
   {render:()=>`<h2 style="font-family:var(--sr);font-size:24px;font-weight:700;margin-bottom:7px">What genres do you love?</h2><p class="tb" style="font-size:13px;margin-bottom:14px">Pick your favorites — this shapes your AI recommendations.</p><div class="ggrid">${['Thriller','Sci-Fi','Drama','Horror','Comedy','Romance','Action','Documentary','Animation','Arthouse','Crime','Fantasy'].map(g=>`<button class="gbtn${(obData.genres||[]).includes(g)?' sel':''}" onclick="toggleGenre(this,'${g}')">${g}</button>`).join('')}</div>`,
    save:()=>{}},
   {render:()=>`<h2 style="font-family:var(--sr);font-size:24px;font-weight:700;margin-bottom:7px">How often do you watch?</h2><p class="tb" style="font-size:13px;margin-bottom:14px">Helps calibrate your Cinematic Engine.</p><div style="display:flex;flex-direction:column;gap:8px">${['Daily — I live at the cinema','Several times a week','A few times a month','Occasionally'].map((o,i)=>`<button class="gbtn${obData.freq===i?' sel':''}" style="text-align:left;padding:11px 15px;border-radius:12px" onclick="selFreq(${i},this)">${o}</button>`).join('')}</div>`,
@@ -1408,6 +1407,11 @@ async function finishOb(){
   const ob=document.getElementById('ob');
   ob.style.transition='opacity .6s';ob.style.opacity='0';
   setTimeout(()=>ob.style.display='none',600);
+  if(obData.email&&obData.password&&CLOUD.client){
+    const r=await CLOUD.client.auth.signUp({email:obData.email,password:obData.password,options:{emailRedirectTo:location.origin+location.pathname}});
+    if(r.error){showAuthPage('Sign up onboarding gagal: '+(r.error.message||'Unknown error'));}
+    else{showAuthPage('Akun dibuat. Cek email untuk verifikasi, lalu login.');}
+  }
 }
 function initOb(){
   if(localStorage.getItem('cl_onboarded')){
@@ -1462,9 +1466,7 @@ function ensureProfileIdentity(){
 
 function syncProfileIdentityUI(){
   const pidEl=document.getElementById('profid');
-  const pid=profilePublicId();
-  if(pidEl)pidEl.textContent='ID: '+(pid||'Not synced yet');
-  setSyncBadge(pid?'ready':'pending');
+  if(pidEl)pidEl.textContent='ID: '+(profilePublicId()||'Not synced yet');
   const u=(profileUsername()||'cinephile');
   const uEl=document.getElementById('editusername');
   if(uEl&&!uEl.value)uEl.value=u;
@@ -1537,6 +1539,7 @@ function cloudTrace(type,msg,extra){const p='[CineLog Cloud]['+type+'] '+msg; if
 function setSyncBadge(t){const el=document.getElementById('profsync');if(el)el.textContent='Sync: '+(t||'pending')}
 
 function cloudAvailable(){return !!(window.supabase && supabase.createClient)}
+function authIdentifierToEmail(v){const t=String(v||'').trim().toLowerCase();if(!t)return'';if(t.includes('@'))return t;if(t.startsWith('id:'))return t.slice(3)+'@cinelog.app';return t.replace(/\s+/g,'_')+'@cinelog.app'}
 function authMsg(t){const el=document.getElementById('auth-msg');if(el)el.textContent=t||''}
 function showAuthPage(msg){const ap=document.getElementById('auth-page');if(ap)ap.classList.add('open');authMsg(msg||'')}
 function hideAuthPage(){const ap=document.getElementById('auth-page');if(ap)ap.classList.remove('open');authMsg('')}
@@ -1548,43 +1551,6 @@ async function refreshCloudUser(){
   const usr=gu&&gu.data?gu.data.user:null;
   if(!usr){CLOUD.enabled=false;CLOUD.uid='';applyAuthUI();return false}
   CLOUD.uid=usr.id;CLOUD.enabled=true;applyAuthUI();return true;
-}
-async function syncCloudIdentity(preferredUsername=''){
-  if(!CLOUD.enabled||!CLOUD.client||!CLOUD.uid)return false;
-  const uid=CLOUD.uid;
-  const curName=(localStorage.getItem('cl_name')||obData.name||'Cinephile').trim()||'Cinephile';
-  const existing=await CLOUD.client.from('cl_profiles').select('username,public_id').eq('user_id',uid).maybeSingle();
-  const ex=(existing&&existing.data)||{};
-  const pending=localStorage.getItem('cl_pending_username')||'';
-  let uname=(preferredUsername||pending||ex.username||profileUsername()||curName).trim().toLowerCase();
-  uname=__slug(uname).replace(/-/g,'_').slice(0,20)||('user_'+uid.slice(0,4));
-  let pid=(ex.public_id||localStorage.getItem(STORE.publicId)||'').trim();
-  if(!pid)pid=uid.replace(/-/g,'').slice(0,8).toUpperCase();
-  localStorage.setItem(STORE.username,uname);
-  localStorage.setItem(STORE.publicId,pid);
-  if(pending)localStorage.removeItem('cl_pending_username');
-  await CLOUD.client.from('cl_profiles').upsert({
-    user_id:uid,
-    name:curName,
-    username:uname,
-    public_id:pid,
-    bio:localStorage.getItem(STORE.bio)||'',
-    location:localStorage.getItem(STORE.loc)||'',
-    avatar_url:localStorage.getItem(STORE.avatar)||''
-  },{onConflict:'user_id'});
-  const dirRes=await CLOUD.client.from('cl_user_directory').upsert({
-    user_id:uid,
-    username:uname,
-    public_id:pid,
-    display_name:curName,
-    avatar_url:localStorage.getItem(STORE.avatar)||'',
-    status_text:'On CineLog',
-    updated_at:new Date().toISOString()
-  },{onConflict:'user_id'});
-  if(dirRes&&dirRes.error){cloudTrace('warn','Directory upsert failed',dirRes.error);setSyncBadge('error');return false}
-  cloudTrace('info','Identity synced',{uid,username:uname,publicId:pid});
-  syncProfileIdentityUI();
-  return true;
 }
 
 async function initCloudSession(){
@@ -1599,8 +1565,7 @@ async function initCloudSession(){
     if(probe.error){CLOUD.lastError='Table cl_profiles not ready';showAuthPage(CLOUD.lastError);return false}
     CLOUD.ready=true;
     await refreshCloudUser();
-    if(CLOUD.enabled)await syncCloudIdentity();
-    if(!CLOUD.enabled)showAuthPage('Silakan Login atau Sign Up.');
+    if(!CLOUD.enabled)showAuthPage('Silakan login atau lanjut sebagai guest.');
     return CLOUD.enabled;
   }catch(e){
     CLOUD.lastError=(e&&e.message)||'Cloud init failed';
@@ -1615,7 +1580,6 @@ async function authGuest(){
   const sign=await CLOUD.client.auth.signInAnonymously();
   if(sign.error){authMsg(sign.error.message||'Gagal guest login');return}
   await refreshCloudUser();
-  await syncCloudIdentity();
   hideAuthPage();
   await cloudPullState();
   renderProfile();renderLists();renderCommunity();buildFilmLog();renderRecent();
@@ -1625,39 +1589,28 @@ async function authLogin(){
   if(!CLOUD.client){showAuthPage('Supabase belum siap. Cek config.');return}
   const id=(document.getElementById('auth-identifier')||{}).value||'';
   const pw=(document.getElementById('auth-password')||{}).value||'';
-  if(!id.trim()||!pw){authMsg('Email dan password wajib diisi.');return}
-  const email=String(id||'').trim().toLowerCase();
+  if(!id.trim()||!pw){authMsg('Username/ID dan password wajib diisi.');return}
+  const email=authIdentifierToEmail(id);
   const res=await CLOUD.client.auth.signInWithPassword({email,password:pw});
   if(res.error){authMsg(res.error.message||'Login gagal');return}
   await refreshCloudUser();
-  await syncCloudIdentity();
   hideAuthPage();
   await cloudPullState();
   renderProfile();renderLists();renderCommunity();buildFilmLog();renderRecent();
 }
 
-async function authSignup(){
+async function authSetPassword(){
   if(!CLOUD.client){showAuthPage('Supabase belum siap. Cek config.');return}
-  const id=(document.getElementById('auth-identifier')||{}).value||'';
-  const uname=((document.getElementById('auth-username')||{}).value||'').trim();
+  const id=(document.getElementById('auth-identifier')||{}).value||profileUsername()||'';
   const pw=(document.getElementById('auth-password')||{}).value||'';
-  const email=String(id||'').trim().toLowerCase();
-  if(!email||!email.includes('@')||!pw||!uname){authMsg('Sign up butuh email valid, username, dan password.');return}
-  localStorage.setItem('cl_pending_username',uname);
-  const res=await CLOUD.client.auth.signUp({email,password:pw,options:{emailRedirectTo:location.origin+location.pathname,data:{username:uname}}});
-  if(res.error){authMsg(res.error.message||'Sign up gagal');return}
-  const u=(res.data&&res.data.user)||null;
-  if(u){await refreshCloudUser();await syncCloudIdentity(uname);}
-  authMsg('Akun dibuat. Silakan verifikasi email lalu login.');
-}
-
-async function authForgotPassword(){
-  if(!CLOUD.client){showAuthPage('Supabase belum siap. Cek config.');return}
-  const email=((document.getElementById('auth-identifier')||{}).value||'').trim().toLowerCase();
-  if(!email||!email.includes('@')){authMsg('Masukkan email valid untuk reset password.');return}
-  const r=await CLOUD.client.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
-  if(r.error){authMsg(r.error.message||'Gagal kirim reset password');return}
-  authMsg('Link reset password sudah dikirim ke email.');
+  if(!id.trim()||!pw){authMsg('Isi username/ID dan password baru.');return}
+  const ok=await refreshCloudUser();
+  if(!ok){authMsg('Login dulu sebagai guest atau user sebelum buat password.');return}
+  const email=authIdentifierToEmail(id);
+  const up=await CLOUD.client.auth.updateUser({email,password:pw});
+  if(up.error){authMsg(up.error.message||'Gagal membuat password');return}
+  localStorage.setItem(STORE.username,String(id).trim().toLowerCase());
+  authMsg('Password berhasil dibuat. Selanjutnya login pakai username/ID + password.');
 }
 
 async function authLogout(){
@@ -1877,12 +1830,11 @@ async function searchConnectPlus(){
   if(CLOUD.enabled&&CLOUD.client){
     try{
       const safe=q.replace(/[,()]/g,'');
-      const pat=mode==='prefix'?(safe+'%'):safe;
-      const dataQ=await CLOUD.client.from('cl_user_directory').select('user_id,username,public_id,display_name,avatar_url,status_text').or('username.ilike.'+pat+',public_id.ilike.'+pat+',display_name.ilike.'+pat).limit(8);
+      const dataQ=await CLOUD.client.from('cl_user_directory').select('user_id,username,public_id,display_name,avatar_url,status_text').or('username.ilike.'+safe+',public_id.ilike.'+safe).limit(8);
       if(!dataQ.error){
         const rows=(dataQ.data||[])
           .filter(x=>x.user_id!==CLOUD.uid)
-          .filter(x=>{const u=String(x.username||'').toLowerCase(),p=String(x.public_id||'').toLowerCase(),n=String(x.display_name||'').toLowerCase();return mode==='prefix'?(u.startsWith(q)||p.startsWith(q)||n.startsWith(q)):(u===q||p===q||n===q)})
+          .filter(x=>String(x.username||'').toLowerCase()===q||String(x.public_id||'').toLowerCase()===q)
           .map(mapDirectoryRow);
         renderConnectResults(rows);
         if(rows.length)return;
@@ -1890,7 +1842,7 @@ async function searchConnectPlus(){
     }catch(_){ }
   }
 
-  const rows=CONNECT_POOL.filter(x=>{const u=x.username.toLowerCase(),i=x.id.toLowerCase(),n=x.name.toLowerCase();return mode==='prefix'?(u.startsWith(q)||i.startsWith(q)||n.startsWith(q)):(u===q||i===q||n===q)}).slice(0,8);
+  const rows=CONNECT_POOL.filter(x=>x.username.toLowerCase()===q||x.id.toLowerCase()===q).slice(0,8);
   renderConnectResults(rows);
 }
 function addFriend(idx){
@@ -2033,7 +1985,7 @@ const __loadSnd=loadSnd;loadSnd=async function(m){__loadSnd(m);sndPreview='';if(
 const __sndPlay=sndPlay;sndPlay=function(){const a=document.getElementById('snd-audio');if(sndPreview&&a&&(!curMovie.sndId||!sndPlayer||!sndPlayer.playVideo)){if(!a.src)a.src=sndPreview;if(sndIsPlaying){a.pause();sndIsPlaying=false;document.getElementById('sndpico').className='ph-bold ph-play';document.getElementById('sndpbtn').classList.remove('playing')}else{a.play().catch(()=>{});sndIsPlaying=true;document.getElementById('sndpico').className='ph-bold ph-pause';document.getElementById('sndpbtn').classList.add('playing')}return}__sndPlay()}
 const __sndMute=sndMute;sndMute=function(){const a=document.getElementById('snd-audio');if(sndPreview&&a&&(!curMovie.sndId||!sndPlayer)){a.muted=!a.muted;document.getElementById('sndmico').className=a.muted?'ph-bold ph-speaker-slash':'ph-bold ph-speaker-high';return}__sndMute()}
 
-window.searchLogMovie=searchLogMovie;window.selectLogMovie=selectLogMovie;window.saveLog=saveLog;window.createList=createList;window.searchConnectPlus=searchConnectPlus;window.addFriend=addFriend;window.authGuest=authGuest;window.authLogin=authLogin;window.authSignup=authSignup;window.authForgotPassword=authForgotPassword;window.authLogout=authLogout;
+window.searchLogMovie=searchLogMovie;window.selectLogMovie=selectLogMovie;window.saveLog=saveLog;window.createList=createList;window.searchConnectPlus=searchConnectPlus;window.addFriend=addFriend;window.authGuest=authGuest;window.authLogin=authLogin;window.authSetPassword=authSetPassword;window.authLogout=authLogout;
 
 function setMobileViewportHeight(){
   const vh=window.innerHeight*0.01;
