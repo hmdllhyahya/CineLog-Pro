@@ -563,6 +563,7 @@ select.finp{cursor:none;background:rgba(0,0,0,.5)}
         <h1 class="tp" id="profname" style="margin-bottom:6px">Rizly</h1>
         <p style="color:var(--mu);font-size:13px" id="profmeta">Bandung, Indonesia &nbsp;·&nbsp; Film Student at UNPAD</p>
         <p style="color:var(--mu);font-size:11px;margin-top:4px" id="profid">ID: user-new</p>
+        <p style="color:var(--mu);font-size:11px;margin-top:2px" id="profsync">Sync: pending</p>
         <div class="statrow">
           <div class="stat"><h5>412</h5><p>Films</p></div>
           <div class="stat"><h5>84</h5><p>This Year</p></div>
@@ -1534,6 +1535,8 @@ function mapDirectoryRow(r){
 
 const CLOUD={enabled:false,ready:false,uid:'',client:null,lastError:''};
 let cloudSaveTimer=null;
+function cloudTrace(type,msg,extra){const p='[CineLog Cloud]['+type+'] '+msg; if(type==='error')console.error(p,extra||''); else if(type==='warn')console.warn(p,extra||''); else console.info(p,extra||'')}
+function setSyncBadge(t){const el=document.getElementById('profsync');if(el)el.textContent='Sync: '+(t||'pending')}
 
 function cloudAvailable(){return !!(window.supabase && supabase.createClient)}
 function authIdentifierToEmail(v){const t=String(v||'').trim().toLowerCase();if(!t)return'';if(t.includes('@'))return t;if(t.startsWith('id:'))return t.slice(3)+'@cinelog.app';return t.replace(/\s+/g,'_')+'@cinelog.app'}
@@ -1628,7 +1631,7 @@ async function cloudPullState(){
     const reviewsQ=CLOUD.client.from('cl_reviews').select('*').eq('user_id',uid).order('created_at',{ascending:false});
     const watchQ=CLOUD.client.from('cl_watchlist').select('*').eq('user_id',uid).order('created_at',{ascending:false});
     const all=await Promise.all([profileQ,logsQ,listsQ,friendsQ,reviewsQ,watchQ]);
-    if(all.some(x=>x.error))return false;
+    if(all.some(x=>x.error)){cloudTrace('warn','cloudPullState query returned error',all.map(x=>x.error).filter(Boolean));return false}
 
     const p=all[0].data;
     const logs=(all[1].data||[]).map(x=>x.payload).filter(Boolean);
@@ -1651,8 +1654,9 @@ async function cloudPullState(){
       if(p.username)localStorage.setItem(STORE.username,p.username);
       if(p.public_id)localStorage.setItem(STORE.publicId,p.public_id);
     }
+    cloudTrace('info','cloudPullState success',{uid});
     return true;
-  }catch(_){return false}
+  }catch(e){cloudTrace('error','cloudPullState failed',e);return false}
 }
 async function cloudPushState(){
   if(!CLOUD.enabled||!CLOUD.client||!CLOUD.uid)return false;
@@ -1707,7 +1711,7 @@ async function cloudPushState(){
       await CLOUD.client.from('cl_watchlist').insert(userWatchlist.map(w=>({user_id:uid,watch_key:w.id,payload:w})));
     }
 
-    await CLOUD.client.from('cl_user_directory').upsert({
+    const dirRes=await CLOUD.client.from('cl_user_directory').upsert({
       user_id:uid,
       username:username,
       public_id:publicId,
@@ -1717,8 +1721,11 @@ async function cloudPushState(){
       updated_at:new Date().toISOString()
     },{onConflict:'user_id'});
 
+    if(dirRes&&dirRes.error){cloudTrace('warn','cloudPushState directory upsert failed',dirRes.error);setSyncBadge('error');return false}
+    cloudTrace('info','cloudPushState success',{uid});
+    setSyncBadge('ready');
     return true;
-  }catch(_){return false}
+  }catch(e){cloudTrace('error','cloudPushState failed',e);setSyncBadge('error');return false}
 }
 function cloudPushDebounced(){
   if(!CLOUD.enabled)return;
@@ -1794,7 +1801,7 @@ async function fetchTrending(){if(!TMDB){trendingCache=[];return}try{const r=awa
 
 function renderCommunity(){
   const c=document.getElementById('view-community');if(!c)return;const p=c.querySelectorAll('.cpanel');const feed=c.querySelector('.feed');if(!p[0]||!p[1]||!feed)return;
-  const connect='<div class="frow" style="margin-bottom:8px"><label>Connect Plus</label><input id="connect-query" class="finp" placeholder="Search username / ID"></div><button class="btn btna sm" style="margin-bottom:10px" onclick="searchConnectPlus()">Find</button><div id="connect-results" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>';
+  const connect='<div class="frow" style="margin-bottom:8px"><label>Connect Plus</label><input id="connect-query" class="finp" placeholder="Search username / ID"></div><div class="frow" style="margin-bottom:8px"><label>Search Mode</label><select id="connect-mode" class="finp"><option value="exact">Exact match</option><option value="prefix">Starts with</option></select></div><button class="btn btna sm" style="margin-bottom:10px" onclick="searchConnectPlus()">Find</button><div id="connect-results" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>';
   const fHtml=userFriends.length?userFriends.map(f=>'<div class="fri"><div class="fav3" style="background-image:url(\''+__safe(f.avatar)+'\')"></div><div class="fri-info"><h4>'+__safe(f.name)+'</h4><p>'+__safe(f.status)+'</p></div></div>').join(''):'<div class="tb" style="font-size:13px">No friends connected yet.</div>';
   p[0].innerHTML='<h3 class="ts" style="font-size:17px;margin-bottom:14px">Friends</h3>'+connect+fHtml;
   const top=(trendingCache.length?trendingCache:userLogs.map((l,i)=>({title:l.title,release_date:(l.year||'')+'-01-01',vote_count:100-i*9,media_type:'movie'}))).slice(0,5);
@@ -1815,6 +1822,7 @@ async function searchConnectPlus(){
   const raw=((document.getElementById('connect-query')||{}).value||'').trim().toLowerCase();
   const q=raw.replace(/^@/,'');
   const out=document.getElementById('connect-results');
+  const mode=((document.getElementById('connect-mode')||{}).value||'exact');
   if(!out)return;
   if(!q){out.innerHTML='';connectResults=[];return}
   out.innerHTML='<div class="tb" style="font-size:12px">Searching...</div>';

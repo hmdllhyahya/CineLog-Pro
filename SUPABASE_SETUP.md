@@ -1,24 +1,21 @@
-# Supabase Setup (Starter)
+# Supabase Setup (CineLog Runtime)
 
-This repository now includes Supabase foundations for the next implementation phase.
+## Source of truth schema
+Use **`supabase/cl_schema.sql`** for this app runtime.
 
-## Files added
-- `.env.example` — placeholder variables for project URL and anon key.
-- `assets/js/config.js` — runtime config used by static front-end.
-- `assets/js/supabase-bootstrap.js` — initializes `window.supabaseClient` safely.
-- `supabase/schema.sql` — starter schema + trigger + RLS policies.
+`supabase/schema.sql` is legacy/starter reference and should not be used for current `cl_*` app tables.
 
 ## Quick start
-1. Create a Supabase project.
-2. Open `assets/js/config.js` and fill:
-   - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY`
-3. Run SQL in Supabase SQL Editor:
-   - paste `supabase/schema.sql`
-4. Reload app.
-
-If config is empty, app will keep running in local-only mode (existing behavior).
+1. Create/open your Supabase project.
+2. In **Settings → API**, copy:
+   - Project URL
+   - Publishable key
+3. Set runtime config in `assets/js/config.js` (or inject `window.__CINELOG_ENV__`).
+4. Run SQL in Supabase SQL Editor:
+   - paste `supabase/cl_schema.sql`
+5. Reload app and verify auth/login works.
 
 ## Notes
-- This is a **foundation** layer, not full migration yet.
-- Current UI still reads hardcoded/mock data and localStorage; DB reads/writes are next step.
+- Frontend must use **publishable key**, never secret key.
+- Connect Plus reads from `public.cl_user_directory`.
+- Profile ID is expected from DB-backed `public_id` field.

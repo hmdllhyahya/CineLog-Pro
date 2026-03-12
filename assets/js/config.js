@@ -1,8 +1,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // CineLog Pro – Runtime Configuration
-// Copy values from your project dashboards and fill them in below.
-// This file is committed with empty placeholders — never commit real keys.
+// You can override these at deploy time via: window.__CINELOG_ENV__
+// Example:
+// <script>window.__CINELOG_ENV__={SUPABASE_URL:'...',SUPABASE_ANON_KEY:'...',TMDB_KEY:'...'}</script>
 // ─────────────────────────────────────────────────────────────────────────────
+const __env = window.__CINELOG_ENV__ || {};
 window.CINELOG_CONFIG = {
   // Supabase – get from: https://app.supabase.com → Project Settings → API
   SUPABASE_URL: 'https://fvrhagqwdbllnjyqtpfp.supabase.co',
