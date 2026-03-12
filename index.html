@@ -1454,19 +1454,18 @@ function profileUsername(){
   return (localStorage.getItem(STORE.username)||'').trim();
 }
 function profilePublicId(){
-  let pid=(localStorage.getItem(STORE.publicId)||'').trim();
-  if(!pid){pid='CL-'+__rid();localStorage.setItem(STORE.publicId,pid)}
-  return pid;
+  return (localStorage.getItem(STORE.publicId)||'').trim();
 }
+
 function ensureProfileIdentity(){
   const name=(localStorage.getItem('cl_name')||obData.name||'Cinephile').trim()||'Cinephile';
   let uname=(localStorage.getItem(STORE.username)||'').trim();
   if(!uname){uname=__slug(name).replace(/-/g,'_').slice(0,20)||('user_'+__rid().toLowerCase().slice(0,4));localStorage.setItem(STORE.username,uname)}
-  profilePublicId();
 }
+
 function syncProfileIdentityUI(){
   const pidEl=document.getElementById('profid');
-  if(pidEl)pidEl.textContent='ID: '+profilePublicId();
+  if(pidEl)pidEl.textContent='ID: '+(profilePublicId()||'Not synced yet');
   const u=(profileUsername()||'cinephile');
   const uEl=document.getElementById('editusername');
   if(uEl&&!uEl.value)uEl.value=u;
@@ -1660,7 +1659,7 @@ async function cloudPushState(){
   try{
     const uid=CLOUD.uid;
     const username=(profileUsername()||'cinephile').toLowerCase();
-    const publicId=profilePublicId();
+    const publicId=profilePublicId()||uid.replace(/-/g,'').slice(0,8).toUpperCase();
     const name=localStorage.getItem('cl_name')||obData.name||'Cinephile';
     const avatar=localStorage.getItem(STORE.avatar)||'';
     await CLOUD.client.from('cl_profiles').upsert({
@@ -1778,7 +1777,7 @@ function renderProfile(){
   const total=userLogs.length,yr=String(new Date().getFullYear()),thisY=userLogs.filter(x=>String((x.date||'').slice(0,4))===yr).length,revs=userLogs.filter(x=>String(x.review||'').trim()).length;
   const hs=document.querySelectorAll('#view-diary .stat h5');if(hs[0])hs[0].textContent=total;if(hs[1])hs[1].textContent=thisY;if(hs[2])hs[2].textContent=revs;
   document.getElementById('profmeta').textContent=(localStorage.getItem(STORE.loc)||'Set your location')+' · '+(localStorage.getItem(STORE.bio)||'Add a short bio');
-  const pid=document.getElementById('profid');if(pid)pid.textContent='ID: '+profilePublicId();
+  const pid=document.getElementById('profid');if(pid)pid.textContent='ID: '+(profilePublicId()||'Not synced yet');
   const b=document.querySelector('#view-diary .sh .btn.btng.sm[onclick*="filmlog"]');if(b)b.textContent='View All '+total;
   const fs=document.querySelector('#view-filmlog .ph .tb');if(fs)fs.textContent='All '+total+' films — sorted & filtered.';
   renderWatchlistSection();
